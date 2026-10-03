@@ -39,7 +39,7 @@
           <section id="victory" class="victory" aria-live="polite" aria-labelledby="victory-title" hidden>
             <div class="victory-stars" aria-hidden="true">✦ ★ ✦</div>
             <div><span class="eyebrow">ПРЕКРАСНАЯ РАБОТА!</span><h2 id="victory-title">Комната восстановлена!</h2><p id="victory-text">Все улики на своих местах.</p></div>
-            <button id="next" class="primary">Следующая комната <span aria-hidden="true">→</span></button>
+            <button id="next" class="primary">Следующая комната</button>
           </section>
         </div>
       </section>
@@ -48,7 +48,7 @@
       <div class="intro-page">
         <header class="intro-header">
           <span class="eyebrow">ПОСЛЕДНЯЯ СТРАНИЦА · ПРОЛОГ</span>
-          <button id="intro-skip" class="intro-skip" autofocus>Пропустить <span aria-hidden="true">→</span></button>
+          <button id="intro-skip" class="intro-skip" autofocus>Пропустить</button>
         </header>
         <h1 id="intro-title">Кто-то стирает <em>концовки.</em></h1>
         <p id="intro-description" class="intro-description">Три страницы до начала вашей истории.</p>
@@ -67,7 +67,7 @@
             <div class="comic-copy"><h2>Следующий ход — ваш.</h2><p>Толкайте <strong>сундуки с книгами</strong> на все золотые отметки, чтобы открыть следующую комнату. Тянуть сундуки нельзя — берегитесь углов без отметок.</p><p><strong>Стрелки / WASD</strong> или <strong>свайп</strong> — шаг и толчок. <strong>Z / «Отменить»</strong> вернёт ход, <strong>«Заново»</strong> начнёт комнату сначала.</p><p class="comic-task">Начните с кабинета сыщика. Другие книги — в «Меню». Прогресс сохраняется автоматически.</p></div>
           </li>
         </ol>
-        <footer class="intro-footer"><p>На полях письма ещё одна строка:<br /><em>«Не всякая история хочет закончиться».</em></p><button id="intro-start" class="primary">Войти в историю <span aria-hidden="true">→</span></button></footer>
+        <footer class="intro-footer"><p>На полях письма ещё одна строка:<br /><em>«Не всякая история хочет закончиться».</em></p><button id="intro-start" class="primary">Войти в историю</button></footer>
       </div>
     </dialog>
     <dialog id="level-menu" class="level-menu" aria-label="Атлас историй и выбор комнаты">
@@ -84,7 +84,7 @@
           <nav id="map-shelf" class="map-shelf horizontal-shelf" aria-label="Карты историй" tabindex="0"></nav>
         </section>
         <section id="location-view" hidden>
-          <button id="atlas-back" class="atlas-back">← К полке карт</button>
+          <button id="atlas-back" class="atlas-back">К полке карт</button>
           <div class="book-heading">
             <span id="location-genre" class="eyebrow"></span>
             <h1 id="location-title"></h1>
@@ -98,7 +98,7 @@
           <p id="route-legend" class="route-legend">○ Доступна · ✓ Пройдена · Замок — пройдите предыдущую комнату</p>
         </section>
         <section class="mission">
-          <button id="intro-replay" class="intro-replay">Прочитать вступление и правила ↗</button>
+          <button id="intro-replay" class="intro-replay">Прочитать вступление и правила</button>
           <span class="eyebrow">ВАША ЗАДАЧА</span>
           <p id="instruction"></p>
           <div class="legend"><span><i class="crate-symbol"></i>Сундук с книгами</span><span><i class="goal-symbol"></i>Место для улики</span></div>
@@ -111,9 +111,14 @@
           <button id="pwa-update" hidden>Обновить приложение</button>
         </section>
         <p class="menu-credits">Задачи: Microban · David W Skinner</p>
-        <p class="menu-credits"><a href="./licensing.html" target="_blank" rel="noopener">Лицензия и авторские права</a></p>
+        <p class="menu-credits"><button id="licenses-open" class="document-link">Лицензия и авторские права</button></p>
       </div>
     </dialog>
+    <dialog id="licenses-dialog" class="legal-dialog" aria-label="Лицензия и авторские права">
+      <button id="licenses-back" class="document-link">Назад</button>
+      <main id="licenses-content" class="document-paper"></main>
+    </dialog>
+    <script type="module" src="./src/licenses.js"></script>
     <dialog id="pwa-install-dialog" class="pwa-dialog" aria-labelledby="pwa-install-title">
       <img src="./icons/icon-192.png" width="64" height="64" alt="" />
       <h2 id="pwa-install-title">«Последняя страница» всегда с вами</h2>

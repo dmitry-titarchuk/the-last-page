@@ -4,28 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Лицензия — Последняя страница</title>
-    <style>
-      :root { color-scheme: dark; }
-      body { margin: 0 auto; padding: 2rem 1.25rem; max-width: 46rem; background: #171f23; color: #eee3cc; font: 1rem/1.65 system-ui, sans-serif; }
-      h1, h2 { line-height: 1.25; }
-      a { color: #eacb86; }
-    </style>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>body { background: #cbbb98; color: #302f27; padding: 20px; } </style>
   </head>
   <body>
-    <main>
+    <button id="licenses-back" class="document-link">Назад</button>
+    <div id="licenses-content" class="document-paper"><main>
       <h1>Лицензия и авторские права</h1>
       <p>«Последняя страница» / The Last Page</p>
       <p>© 2026 Dmitry Titarchuk · <a href="mailto:dmitry.titarchuk@gmail.com">dmitry.titarchuk@gmail.com</a></p>
       <p>Репозиторий: <a href="https://github.com/dmitry-titarchuk/the-last-page">dmitry-titarchuk/the-last-page</a></p>
       <h2>Авторский код и собственные материалы</h2>
-      <p>Доступны по <a href="./LICENSE">PolyForm Noncommercial 1.0.0</a>: некоммерческое использование, изменение и распространение разрешены на условиях полного текста лицензии, включая предусмотренные ею разрешения для перечисленных некоммерческих организаций.</p>
+      <p>Доступны по <a href="#document=LICENSE">PolyForm Noncommercial 1.0.0</a>: некоммерческое использование, изменение и распространение разрешены на условиях полного текста лицензии, включая предусмотренные ею разрешения для перечисленных некоммерческих организаций.</p>
       <p>Коммерческое использование вне разрешений лицензии требует отдельного письменного разрешения правообладателя. Для согласования напишите на <a href="mailto:dmitry.titarchuk@gmail.com">dmitry.titarchuk@gmail.com</a>. Само обращение не даёт разрешения.</p>
-      <p>При распространении сохраняйте лицензию или ссылку на неё и обязательное уведомление из <a href="./NOTICE">NOTICE</a>.</p>
+      <p>При распространении сохраняйте лицензию или ссылку на неё и обязательное уведомление из <a href="#document=NOTICE">NOTICE</a>.</p>
       <h2>Сторонние материалы</h2>
-      <p>Three.js — © 2010–2026 three.js authors, <a href="./node_modules/three/LICENSE">лицензия MIT</a>.</p>
+      <p>Three.js — © 2010–2026 three.js authors, <a href="#document=node_modules/three/LICENSE">лицензия MIT</a>.</p>
       <p>Схемы комнат 1–35 — Microban, David W Skinner. Они исключены из лицензии авторского кода. В исходном файле указано разрешение на публикацию на сайте-источнике; условия включения в эту игру требуют отдельного подтверждения.</p>
-      <p>Разрешение автора проекта не предоставляет прав на сторонние материалы. Их уведомления и сведения об источниках приведены в <a href="./THIRD_PARTY_NOTICES.txt">THIRD_PARTY_NOTICES.txt</a>.</p>
-      <p><a href="./index.html">Вернуться к игре</a></p>
-    </main>
+      <p>Разрешение автора проекта не предоставляет прав на сторонние материалы. Их уведомления и сведения об источниках приведены в <a href="#document=THIRD_PARTY_NOTICES.txt">THIRD_PARTY_NOTICES.txt</a>.</p>
+      <p data-return-game><a href="./index.html">Вернуться к игре</a></p>
+    </main></div>
+    <script type="module" src="./src/licenses.js"></script>
   </body>
 </html>
