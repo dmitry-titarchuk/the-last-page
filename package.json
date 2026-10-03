@@ -1,0 +1,22 @@
+{
+  "name": "the-last-page",
+  "version": "0.1.0",
+  "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --max-old-space-size=1024 --test --test-concurrency=2 tests/*.test.js",
+    "check:levels": "node scripts/solve-levels.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "author": {
+    "name": "Dmitry Titarchuk",
+    "email": "dmitry.titarchuk@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dmitry-titarchuk/the-last-page.git"
+  }
+}
