@@ -803,9 +803,10 @@ export class RoomScene extends ModelFactory {
       this.legs.forEach((leg, index) => { leg.rotation.x = Math.sin(progress * Math.PI * 2 + index * Math.PI) * .35; });
       this.arms.forEach((arm) => { arm.rotation.x = .4 * effort; });
     } else if (action.type === 'victory') {
-      const bounce = Math.abs(Math.sin(progress * Math.PI * 3));
+      const danceProgress = (time - action.start) / 1600;
+      const bounce = Math.abs(Math.sin(danceProgress * Math.PI * 3));
       this.rig.position.y = bounce * .16;
-      this.rig.rotation.z = Math.sin(progress * Math.PI * 6) * .08 * effort;
+      this.rig.rotation.z = Math.sin(danceProgress * Math.PI * 6) * .08 * effort;
       this.arms[0].rotation.z = -2.5 * effort;
       this.arms[1].rotation.z = 2.5 * effort;
     } else {
@@ -817,7 +818,7 @@ export class RoomScene extends ModelFactory {
     }
     if (progress === 1) {
       this.action = this.followup ? { type: this.followup, start: time,
-        duration: this.followup === 'victory' ? 1600 : this.followup === 'shake' ? 700 : 650,
+        duration: this.followup === 'victory' ? 4800 : this.followup === 'shake' ? 700 : 650,
         axis: action.axis } : null;
       this.followup = null;
       if (this.action?.type === 'victory') this.pendingRub = false;
@@ -826,6 +827,16 @@ export class RoomScene extends ModelFactory {
         this.onVictory?.();
       }
     }
+  }
+
+  finishVictory() {
+    if (this.action?.type !== 'victory' || this.victoryReady) return false;
+    this.action = null;
+    this.followup = null;
+    this.resetPose();
+    this.victoryReady = true;
+    this.onVictory?.();
+    return true;
   }
 
   swipeDirection(dx, dy) {

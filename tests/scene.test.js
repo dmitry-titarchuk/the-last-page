@@ -961,6 +961,7 @@ test('Результат победы готов только после пра�
   assert.equal(scene.victoryReady, false);
   advance(scene, start, start + 651);
   assert.equal(scene.action.type, 'victory');
+  assert.equal(scene.action.duration, 4800);
   const end = scene.action.start + scene.action.duration;
   advance(scene, start + 651, end - 1);
   assert.equal(scene.victoryReady, false);
@@ -1236,4 +1237,22 @@ test('Двухклеточные внутренние преграды разр�
     assert.equal(pairs.size, enabled ? count : 0);
     for (const [key, partner] of pairs) assert.equal(cellKey(pairs.get(cellKey(partner))), key);
   }
+});
+
+
+test('тап завершает победный танец один раз, обычные жесты не прерывает', () => {
+  const { scene, game } = setup();
+  let calls = 0;
+  scene.onVictory = () => { calls++; };
+  scene.sync(game.state, false, { action: 'push', complete: true });
+  assert.equal(scene.finishVictory(), false);
+  const start = scene.action.start;
+  advance(scene, start, start + 651);
+  assert.equal(scene.action.type, 'victory');
+  assert.equal(scene.finishVictory(), true);
+  assert.equal(scene.victoryReady, true);
+  assert.equal(scene.action, null);
+  assert.equal(scene.finishVictory(), false);
+  scene.frame(start + 6000);
+  assert.equal(calls, 1);
 });

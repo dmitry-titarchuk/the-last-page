@@ -312,6 +312,16 @@ try {
     if (document.hidden) { pendingDirection = null; scene.cancelControls(); }
   });
   scene.renderer.domElement.addEventListener('pointerdown', () => stage.focus({ preventScroll: true }));
+  let victoryTap;
+  stage.addEventListener('pointerdown', (event) => {
+    victoryTap = game.complete && scene.action?.type === 'victory' && !event.target.closest('button')
+      ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null;
+  });
+  stage.addEventListener('pointerup', (event) => {
+    if (victoryTap?.id === event.pointerId && Math.hypot(event.clientX - victoryTap.x, event.clientY - victoryTap.y) < 10) scene.finishVictory();
+    victoryTap = null;
+  });
+  stage.addEventListener('pointercancel', () => { victoryTap = null; });
   stage.addEventListener('rendererror', (event) => showError(event.detail));
   stage.addEventListener('renderrestored', () => {
     element('error').hidden = true;
