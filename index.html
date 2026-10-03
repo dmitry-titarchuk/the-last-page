@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#171f23" />
     <title>Последняя страница</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Последняя страница" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <link rel="stylesheet" href="./styles.css" />
     <script type="importmap">
       { "imports": { "three": "./node_modules/three/build/three.module.js" } }
@@ -46,6 +52,7 @@
         </header>
         <h1 id="intro-title">Кто-то стирает <em>концовки.</em></h1>
         <p id="intro-description" class="intro-description">Три страницы до начала вашей истории.</p>
+        <div class="pwa-intro-offer" hidden><span>Истории всегда с вами — установите приложение и играйте офлайн.</span><button data-pwa-install>Установить приложение</button></div>
         <ol class="comic-grid">
           <li class="comic-panel">
             <div class="comic-art" data-intro-art="letter" aria-hidden="true"><span class="comic-number">01</span><span class="comic-caption">Письмо без обратного адреса</span></div>
@@ -98,10 +105,23 @@
         </section>
         <p class="menu-help">Стрелки / WASD — движение. Свайп в любом месте экрана — ход по видимому направлению сетки. Z — отмена. Перетаскивание мышью или двумя пальцами вверх и вниз — наклон камеры.</p>
         <div class="margin-note">«Если книга обрывается,<br />ищи то, что из неё убрали».<span>Из письма хранителя</span></div>
+        <section class="pwa-settings" aria-label="Приложение">
+          <p data-pwa-status role="status">Подготовка игры для офлайн…</p>
+          <button data-pwa-install>Установить приложение</button>
+          <button id="pwa-update" hidden>Обновить приложение</button>
+        </section>
         <p class="menu-credits">Задачи: Microban · David W Skinner</p>
         <p class="menu-credits"><a href="./licensing.html" target="_blank" rel="noopener">Лицензия и авторские права</a></p>
       </div>
     </dialog>
+    <dialog id="pwa-install-dialog" class="pwa-dialog" aria-labelledby="pwa-install-title">
+      <img src="./icons/icon-192.png" width="64" height="64" alt="" />
+      <h2 id="pwa-install-title">«Последняя страница» всегда с вами</h2>
+      <p id="pwa-install-description">Установите приложение: свой значок, отдельное окно и все 35 комнат без интернета.</p>
+      <p data-pwa-status role="status">Подготовка игры для офлайн…</p>
+      <div class="pwa-dialog-actions"><button id="pwa-install-confirm" class="primary">Установить</button><button id="pwa-install-later">Позже</button></div>
+    </dialog>
+    <script type="module" src="./src/pwa.js"></script>
     <script type="module" src="./src/app.js"></script>
   </body>
 </html>

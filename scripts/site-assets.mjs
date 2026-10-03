@@ -15,9 +15,10 @@ async function collect(directory, extension) {
 
 // Общий список ресурсов сайта; импорт модуля не создаёт и не меняет файлы.
 export const assets = [
-  'index.html', 'styles.css', 'models.html', 'models.css',
+  'index.html', 'styles.css', 'models.html', 'models.css', 'manifest.webmanifest',
   'licensing.html', ...legalFiles,
   'node_modules/three/build/three.module.js', 'node_modules/three/build/three.core.js',
   'node_modules/three/examples/jsm/controls/OrbitControls.js',
   ...await collect('src/', '.js'),
+  ...await collect('icons/', '.png'),
 ].sort();

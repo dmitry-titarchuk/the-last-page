@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Последняя страница",
+  "short_name": "Последняя страница",
+  "description": "Восстановите потерянные истории: 35 комнат с головоломками, доступных офлайн.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#121a1e",
+  "theme_color": "#171f23",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

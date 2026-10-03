@@ -5,10 +5,15 @@
   "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --max-old-space-size=1024 --test --test-concurrency=2 tests/*.test.js",
-    "check:levels": "node scripts/solve-levels.mjs",
+    "build": "node scripts/build-site.mjs",
+    "build:pwa": "node scripts/build-pwa.mjs",
+    "check:pwa": "node scripts/build-pwa.mjs --check",
+    "predev": "npm run build:pwa",
+    "predev:lan": "npm run build:pwa",
     "dev": "node scripts/server.mjs",
-    "dev:lan": "node scripts/server.mjs --host 0.0.0.0"
+    "dev:lan": "node scripts/server.mjs --host 0.0.0.0",
+    "test": "node --max-old-space-size=1024 --test --test-concurrency=2 tests/*.test.js",
+    "check:levels": "node scripts/solve-levels.mjs"
   },
   "dependencies": {
     "three": "0.186.1"
