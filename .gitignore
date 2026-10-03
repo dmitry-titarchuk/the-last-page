@@ -1,0 +1,26 @@
+# Зависимости и результаты сборки
+node_modules/
+dist/
+coverage/
+
+# Отчёты браузерных тестов
+test-results/
+playwright-report/
+
+# Локальные настройки и переменные окружения
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+
+# Рабочие документы разработки
+/docs/MOBILE_FIELD.md
+/docs/PLACEMENT_RULES.md
+/docs/LEVELS.md
+/docs/VISUAL_REFERENCES.md
+
+# Логи и служебные файлы ОС
+*.log
+.DS_Store
+Thumbs.db

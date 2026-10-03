@@ -1,0 +1,108 @@
+THIRD-PARTY NOTICES — THE LAST PAGE
+
+Project author: Dmitry Titarchuk
+Contact: dmitry.titarchuk@gmail.com
+Repository: https://github.com/dmitry-titarchuk/the-last-page.git
+
+Third-party materials are excluded from the project's PolyForm
+Noncommercial license. Their rights remain with their rightsholders.
+A commercial license from Dmitry Titarchuk covers only materials Dmitry Titarchuk has rights
+to license; it does not grant rights to the components below.
+
+1. Three.js
+
+Package: three 0.186.1
+Source: https://github.com/mrdoob/three.js
+Files: node_modules/three/ (including OrbitControls.js)
+License: MIT, reproduced below and in node_modules/three/LICENSE.
+
+The MIT License
+
+Copyright © 2010-2026 three.js authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+2. Microban level layouts
+
+Author: David W Skinner, Grandview, Washington, USA
+Collection: Microban, 155 puzzles, revised April  2000
+Original file: DavidWSkinner Microban.sok
+Included layouts: puzzles 1–35 in src/levels.js
+Source identified in original file: http://sokobano.de/
+Author's homepage identified in original file:
+http://users.bentonrea.com/~sasquatch/sokoban/
+
+Copyright remains with David W Skinner. These layouts are not licensed
+under the project's PolyForm Noncommercial license.
+The original file states that the level set was published there with
+its author's permission. It contains no general license permitting
+reuse in other games, modification, or commercial exploitation.
+Permission for inclusion in this game has not been verified. Before
+publication, obtain applicable permission or replace these layouts
+with original levels. Attribution alone does not establish permission.
+
+Original file header (decoded from Windows-1252; layouts omitted):
+
+Date of Last Change:
+
+Set:       Microban
+Copyright: © David W Skinner, Grandview, Washington, USA
+Email:     sasquatch@bentonrea.com
+Homepage:  http://users.bentonrea.com/~sasquatch/sokoban/
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+This Sokoban level set is published here with the author's permission.
+
+The level set is distributed in a text format, that can be imported
+by most of the major Sokoban programs.
+
+For Microsoft Windows ® we recommend using "Sokoban YASC", which can
+be downloaded from: http://sourceforge.net/projects/sokobanyasc/
+
+Enjoy!
+
+SOKOBAN Project         at http://sokobano.de/
+Sokoban WIKI            at http://sokobano.de/wiki/
+
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+155 puzzles, revised April 2000
+This is a good set for beginners and children.
+Most of the puzzles are small and illustrate a particular concept.
+More experienced players should also find them interesting, since they
+are as different from each other as I could make them given their size.
+Sokoholics could perhaps time themselves on completing the whole set.
+This set also contains puzzles which I thought were interesting but too
+easy to include in my regular sets.
+
+
+3. Visual reference: Alexander Pushkin's self-portrait (1829)
+
+Source: https://commons.wikimedia.org/wiki/File:Pushkin_Alexander_self_portret,_1829.jpg
+An original contour interpretation is implemented in src/pushkin-portrait.js.
+The historical drawing is public domain; no photographic texture is
+included.
+
+4. Visual references: rounded-lid and pirate treasure chests
+
+Sources: https://pngimg.com/image/56506
+https://hornernovelty.com/products/pirate-treasure-chest
+These images served only as visual references; their source images are
+not distributed in the game.
