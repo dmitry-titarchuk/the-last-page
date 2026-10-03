@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "node --max-old-space-size=1024 --test --test-concurrency=2 tests/*.test.js",
-    "check:levels": "node scripts/solve-levels.mjs"
+    "check:levels": "node scripts/solve-levels.mjs",
+    "dev": "node scripts/server.mjs",
+    "dev:lan": "node scripts/server.mjs --host 0.0.0.0"
   },
   "dependencies": {
     "three": "0.186.1"

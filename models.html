@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ru" class="models-document">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Каталог моделей · Последняя страница</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./models.css" />
+    <script type="importmap">{ "imports": { "three": "./node_modules/three/build/three.module.js" } }</script>
+  </head>
+  <body class="models-page">
+    <main class="models-shell">
+      <header class="models-header">
+        <div><span class="eyebrow">СЛУЖЕБНАЯ СТРАНИЦА</span><h1>Каталог моделей</h1><p>Модели из генераторов игры · размеры в плитках</p></div>
+        <a href="./">← Вернуться в игру</a>
+      </header>
+      <div id="catalog-error" class="error" role="alert" hidden></div>
+      <div class="models-layout">
+        <section class="catalog-panel" aria-label="Все модели">
+          <div class="catalog-filters">
+            <label>Поиск по названию или ID<input id="model-search" type="search" placeholder="Например, bookcase" /></label>
+            <label>Категория<select id="model-category"><option value="all">Все модели</option><option value="obstacle">Преграды</option><option value="perimeter">Периметр</option><option value="decoration">Предметы декора</option><option value="game">Игровые модели</option></select></label>
+          </div>
+          <p id="catalog-count" class="catalog-count" role="status"></p>
+          <div id="model-grid" class="model-grid"></div>
+          <p id="catalog-empty" hidden>По этому запросу моделей нет.</p>
+        </section>
+        <section class="model-inspector" aria-label="Просмотр выбранной модели">
+          <header><span id="selected-category" class="eyebrow"></span><h2 id="selected-name"></h2><code id="selected-id"></code></header>
+          <div id="model-viewport" class="model-viewport" tabindex="0" aria-label="3D-модель. Перетаскивание — вращение, колесо — масштаб, стрелки — вращение с клавиатуры."></div>
+          <p class="viewer-hint">Перетаскивание — вращение · колесо или жест двумя пальцами — масштаб · правая кнопка — сдвиг</p>
+          <div class="viewer-toolbar">
+            <label>Длина<select id="model-span"></select></label>
+            <button id="regenerate" type="button">Новый вариант</button>
+            <button id="reset-view" type="button">Сбросить ракурс</button>
+          </div>
+          <div class="viewer-zoom"><button id="zoom-out" type="button" aria-label="Уменьшить">−</button><label>Масштаб<input id="model-zoom" type="range" min="25" max="400" value="100" /><output id="zoom-value">100%</output></label><button id="zoom-in" type="button" aria-label="Увеличить">+</button></div>
+          <div class="viewer-angles" aria-label="Ракурсы"><button type="button" data-view="front">Спереди</button><button type="button" data-view="back">Сзади</button><button type="button" data-view="side">Сбоку</button><button type="button" data-view="top">Сверху</button></div>
+          <div class="viewer-toggles"><label><input id="auto-rotate" type="checkbox" />Автовращение</label><label><input id="wireframe" type="checkbox" />Каркас</label><label><input id="show-grid" type="checkbox" checked />Пол и сетка</label></div>
+          <dl class="model-details"><div><dt>Размеры X × Y × Z</dt><dd id="model-size"></dd></div><div><dt>Использование</dt><dd id="model-usage"></dd></div><div><dt>Геометрия</dt><dd id="model-geometry"></dd></div><div><dt>Исходный файл</dt><dd><a id="model-source"></a></dd></div></dl>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="./src/models-page.js"></script>
+  </body>
+</html>

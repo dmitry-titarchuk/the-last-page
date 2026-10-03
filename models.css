@@ -1,0 +1,49 @@
+/* Каталог прокручивается как обычная страница, в отличие от игрового экрана. */
+.models-document { height: auto; overflow: auto; overscroll-behavior: auto; }
+.models-page { height: auto; min-height: 100vh; overflow: visible; overscroll-behavior: auto; padding: 2rem; }
+.models-shell { max-width: 94rem; margin: 0 auto; }
+.models-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.5rem; }
+.models-header h1 { margin: .5rem 0; }
+.models-header p, .viewer-hint, .catalog-count { font-size: .8rem; color: var(--muted); }
+.models-page a { color: var(--gold); text-underline-offset: 3px; }
+.models-header a { font-size: .8rem; }
+.models-layout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(23rem, 1fr); gap: 1.5rem; align-items: start; }
+.catalog-filters { display: grid; grid-template-columns: 1fr 11rem; gap: .75rem; }
+.models-page label { font-size: .75rem; color: #b6c4ba; }
+.catalog-filters label { display: grid; gap: .4rem; }
+.models-page input[type="search"], .models-page select { background: #202d2c; color: var(--cream); border: 1px solid #ffffff25; padding: .6rem; font: inherit; min-width: 0; border-radius: 4px; }
+.models-page input:focus-visible, .models-page select:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.model-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+.model-card { display: flex; flex-direction: column; text-align: left; min-width: 0; padding: .65rem; background: #24312f; border: 1px solid #ffffff15; color: var(--cream); border-radius: 6px; }
+.model-card:hover { background: #2b3c37; border-color: #a58b5e; }
+.model-card[aria-pressed="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.model-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: contain; background: radial-gradient(ellipse, #4d625d66, transparent 70%); }
+.model-card strong { font-size: .8rem; font-weight: 500; line-height: 1.4; margin: .5rem 0 .3rem; }
+.model-card code { font-size: .7rem; color: var(--gold); overflow-wrap: anywhere; }
+.model-card small { margin-top: .3rem; color: var(--muted); font-size: .65rem; }
+.model-inspector { position: sticky; top: 1rem; min-width: 0; padding: 1.3rem; background: #1e2b29; border: 1px solid #ffffff20; border-radius: 8px; }
+.model-inspector h2 { font-size: 1.5rem; margin: .45rem 0; }
+.model-inspector header code { font-size: .8rem; color: var(--gold); }
+.model-viewport { position: relative; height: clamp(17rem, 36vh, 28rem); margin-top: 1rem; background: radial-gradient(ellipse, #4b61514a, #121b1c); border: 1px solid #ffffff12; border-radius: 6px; touch-action: none; cursor: grab; }
+.model-viewport:active { cursor: grabbing; }
+.model-viewport:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.model-viewport canvas { display: block; width: 100%; height: 100%; }
+.viewer-hint { line-height: 1.6; font-size: .7rem; }
+.viewer-toolbar, .viewer-angles, .viewer-toggles, .viewer-zoom { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .8rem 0; }
+.viewer-toolbar label { display: flex; align-items: center; gap: .4rem; }
+.model-inspector button { background: #ffffff05; border: 1px solid #ffffff25; color: var(--cream); padding: .6rem .65rem; font-size: .75rem; border-radius: 4px; }
+.model-inspector button:hover { background: #ffffff10; border-color: var(--gold); }
+.viewer-zoom { flex-wrap: nowrap; }
+.viewer-zoom label { display: flex; align-items: center; gap: .5rem; flex: 1; min-width: 0; }
+.viewer-zoom input { flex: 1; min-width: 0; width: 5rem; accent-color: var(--gold); }
+.viewer-zoom output { min-width: 3rem; text-align: right; font-variant-numeric: tabular-nums; }
+.viewer-toggles { gap: 1rem; }
+.viewer-toggles label { display: flex; align-items: center; gap: .35rem; }
+.viewer-toggles input { accent-color: var(--gold); }
+.model-details { border-top: 1px solid #ffffff15; padding-top: .8rem; margin: 1rem 0 0; display: grid; gap: .55rem; font-size: .75rem; }
+.model-details div { display: grid; grid-template-columns: 10rem 1fr; gap: .5rem; }
+.model-details dt { color: var(--muted); }
+.model-details dd { margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .models-page { padding: 1rem; } .models-layout { grid-template-columns: 1fr; } .model-inspector { position: static; grid-row: 1; } .models-header { align-items: start; } .models-header h1 { font-size: 1.6rem; } .model-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .model-details div { grid-template-columns: 8rem 1fr; } .catalog-filters { grid-template-columns: 1fr; } }
+@media (max-width: 430px) { .model-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .viewer-toolbar { align-items: stretch; } .viewer-toggles { gap: .65rem; } }

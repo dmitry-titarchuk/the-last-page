@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#171f23" />
+    <title>Последняя страница</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      { "imports": { "three": "./node_modules/three/build/three.module.js" } }
+    </script>
+  </head>
+  <body>
+    <main id="game-shell" class="shell">
+      <section class="play-panel" aria-label="Головоломка">
+        <div id="stage" class="stage" tabindex="0" aria-label="Игровое поле. Стрелки, WASD или свайп — движение. Z — отмена. Мышь или два пальца вверх и вниз — наклон камеры.">
+        </div>
+        <div class="hud">
+          <header class="room-header overlay">
+            <span id="subtitle" class="eyebrow"></span><h2 id="room-title"></h2>
+          </header>
+          <div class="score overlay">
+            <span class="room-number" id="room-number"></span>
+            <div class="stats"><span>Улики <strong id="goals">0 / 1</strong></span><span>Ходы <strong id="moves">0</strong></span></div>
+          </div>
+          <div class="play-info overlay">
+            <div id="status" class="status" role="status" aria-live="polite">Верните улики на свои места</div>
+            <p class="footnote">Стрелки / WASD — ход.<br />Свайп в любом месте экрана — по направлению поля.<br />Мышь / два пальца ↕ — наклон.<br />Сундуки можно толкать, но нельзя тянуть.</p>
+          </div>
+          <div class="actions overlay"><button id="undo" disabled aria-label="Отменить ход (Z)"><span aria-hidden="true">↶</span><span class="action-label">Отменить</span></button><button id="restart" aria-label="Начать комнату заново"><span aria-hidden="true">↻</span><span class="action-label">Заново</span></button></div>
+          <button id="menu-open" class="menu-open" aria-label="Меню" aria-haspopup="dialog" aria-controls="level-menu" aria-expanded="false">☰ <span>Меню</span></button>
+          <div id="error" class="error" role="alert" hidden></div>
+          <section id="victory" class="victory" aria-live="polite" aria-labelledby="victory-title" hidden>
+            <div class="victory-stars" aria-hidden="true">✦ ★ ✦</div>
+            <div><span class="eyebrow">ПРЕКРАСНАЯ РАБОТА!</span><h2 id="victory-title">Комната восстановлена!</h2><p id="victory-text">Все улики на своих местах.</p></div>
+            <button id="next" class="primary">Следующая комната <span aria-hidden="true">→</span></button>
+          </section>
+        </div>
+      </section>
+    </main>
+    <dialog id="story-intro" class="story-intro" aria-labelledby="intro-title" aria-describedby="intro-description">
+      <div class="intro-page">
+        <header class="intro-header">
+          <span class="eyebrow">ПОСЛЕДНЯЯ СТРАНИЦА · ПРОЛОГ</span>
+          <button id="intro-skip" class="intro-skip" autofocus>Пропустить <span aria-hidden="true">→</span></button>
+        </header>
+        <h1 id="intro-title">Кто-то стирает <em>концовки.</em></h1>
+        <p id="intro-description" class="intro-description">Три страницы до начала вашей истории.</p>
+        <ol class="comic-grid">
+          <li class="comic-panel">
+            <div class="comic-art" data-intro-art="letter" aria-hidden="true"><span class="comic-number">01</span><span class="comic-caption">Письмо без обратного адреса</span></div>
+            <div class="comic-copy"><h2>Он исчез. Письмо осталось.</h2><p>Ваш родственник, хранитель библиотеки, пропал. Сегодня под дверью лежит письмо, написанное его рукой.</p><blockquote>«Если читаешь это — книги уже теряют концовки. Найди меня, пока не исчезла последняя страница».</blockquote></div>
+          </li>
+          <li class="comic-panel">
+            <div class="comic-art" data-intro-art="library" aria-hidden="true"><span class="comic-number">02</span><span class="comic-caption">За дверью — незаконченные миры</span></div>
+            <div class="comic-copy"><h2>Истории застыли на полуслове.</h2><p>Сыщик не успел назвать преступника. Корабль не вернулся в порт. На месте финалов — пустота. А между полок кто-то шепчет ваше имя…</p><p class="comic-task">Войдите в книги и восстановите истории, чтобы найти след хранителя.</p></div>
+          </li>
+          <li class="comic-panel">
+            <div class="comic-art" data-intro-art="puzzle" aria-hidden="true"><span class="comic-number">03</span><span class="comic-caption">Верните книги — и история продолжится</span></div>
+            <div class="comic-copy"><h2>Следующий ход — ваш.</h2><p>Толкайте <strong>сундуки с книгами</strong> на все золотые отметки, чтобы открыть следующую комнату. Тянуть сундуки нельзя — берегитесь углов без отметок.</p><p><strong>Стрелки / WASD</strong> или <strong>свайп</strong> — шаг и толчок. <strong>Z / «Отменить»</strong> вернёт ход, <strong>«Заново»</strong> начнёт комнату сначала.</p><p class="comic-task">Начните с кабинета сыщика. Другие книги — в «Меню». Прогресс сохраняется автоматически.</p></div>
+          </li>
+        </ol>
+        <footer class="intro-footer"><p>На полях письма ещё одна строка:<br /><em>«Не всякая история хочет закончиться».</em></p><button id="intro-start" class="primary">Войти в историю <span aria-hidden="true">→</span></button></footer>
+      </div>
+    </dialog>
+    <dialog id="level-menu" class="level-menu" aria-label="Атлас историй и выбор комнаты">
+      <div class="book-panel">
+        <button id="menu-close" class="menu-close" aria-label="Закрыть меню">✕</button>
+        <div class="brand"><span class="book-icon" aria-hidden="true">▤</span><span>БИБЛИОТЕКА<br />ПОТЕРЯННЫХ КОНЦОВОК</span></div>
+        <section id="atlas-view">
+          <div class="book-heading">
+            <span class="eyebrow">ПУТЕШЕСТВИЕ ПО КНИГАМ</span>
+            <h1>Атлас потерянных <em>концовок</em></h1>
+            <p>Разверните карту и пройдите по следам хранителя.</p>
+          </div>
+          <p class="shelf-hint">Пять историй на одной полке <span aria-hidden="true">↔</span></p>
+          <nav id="map-shelf" class="map-shelf horizontal-shelf" aria-label="Карты историй" tabindex="0"></nav>
+        </section>
+        <section id="location-view" hidden>
+          <button id="atlas-back" class="atlas-back">← К полке карт</button>
+          <div class="book-heading">
+            <span id="location-genre" class="eyebrow"></span>
+            <h1 id="location-title"></h1>
+            <p id="location-description"></p>
+          </div>
+          <p id="route-progress" class="route-progress"></p>
+          <div id="room-shelf" class="route-viewport horizontal-shelf" tabindex="0" aria-label="Маршрут по комнатам">
+            <nav id="level-route" class="level-route" aria-label="Комнаты локации"></nav>
+          </div>
+          <p id="location-empty" class="location-empty" hidden>Этот свиток ещё хранит свою тайну. Комнаты появятся в следующем продолжении.</p>
+          <p id="route-legend" class="route-legend">○ Доступна · ✓ Пройдена · Замок — пройдите предыдущую комнату</p>
+        </section>
+        <section class="mission">
+          <button id="intro-replay" class="intro-replay">Прочитать вступление и правила ↗</button>
+          <span class="eyebrow">ВАША ЗАДАЧА</span>
+          <p id="instruction"></p>
+          <div class="legend"><span><i class="crate-symbol"></i>Сундук с книгами</span><span><i class="goal-symbol"></i>Место для улики</span></div>
+        </section>
+        <p class="menu-help">Стрелки / WASD — движение. Свайп в любом месте экрана — ход по видимому направлению сетки. Z — отмена. Перетаскивание мышью или двумя пальцами вверх и вниз — наклон камеры.</p>
+        <div class="margin-note">«Если книга обрывается,<br />ищи то, что из неё убрали».<span>Из письма хранителя</span></div>
+        <p class="menu-credits">Задачи: Microban · David W Skinner</p>
+        <p class="menu-credits"><a href="./licensing.html" target="_blank" rel="noopener">Лицензия и авторские права</a></p>
+      </div>
+    </dialog>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
