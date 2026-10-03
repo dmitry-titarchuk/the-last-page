@@ -27,6 +27,15 @@ export function roundFurnitureCount(variant, span) {
   };
 }
 
+export function rearSegmentObstructs(map, point, side) {
+  for (const key of map.floor) {
+    const [x, y] = key.split(',').map(Number);
+    if (side === 'left' && x < point.x && y <= point.y) return true;
+    if (side === 'top' && y < point.y && x <= point.x) return true;
+  }
+  return false;
+}
+
 export function buildPerimeter(scene, map) {
   const permitted = perimeterModels.filter((model) => !sceneConfig.forbiddenPerimeterModels.includes(model.id));
   const rearVariants = permitted.filter((model) => model.rear).map((model) => model.id);
@@ -53,8 +62,9 @@ export function buildPerimeter(scene, map) {
       let run;
       for (const point of points) {
         const last = run?.points.at(-1);
-        if (!last || (horizontal ? point.x - last.x : point.y - last.y) !== 1) {
-          run = { points: [], front, angle };
+        const low = front || rearSegmentObstructs(map, point, name);
+        if (!last || run.front !== low || (horizontal ? point.x - last.x : point.y - last.y) !== 1) {
+          run = { points: [], front: low, angle: angle + (front ? Math.PI : 0) };
           sides.push(run);
         }
         run.points.push(point);
@@ -117,8 +127,8 @@ export function buildPerimeter(scene, map) {
         roundCount.chairs += count.chairs;
         roundCount.objects += count.objects;
       }
-      // Лицевая сторона моделей — +Z: ближнюю мебель разворачиваем наружу, к зрителю.
-      model.rotation.y = side.angle + (side.front ? Math.PI : 0);
+      // Лицевая сторона — +Z. Направление зависит от контура, высота — от видимости.
+      model.rotation.y = side.angle;
       model.position.copy(scene.position({ x: (first.x + last.x) / 2, y: (first.y + last.y) / 2 }, .02));
       Object.assign(model.userData, { variant, modelVariant: selectedVariant, span, front: side.front, cells, singleCellFallback });
       scene.room.add(model);

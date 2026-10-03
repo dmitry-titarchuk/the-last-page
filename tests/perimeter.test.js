@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { RoomScene } from '../src/scene.js';
 import { buildPerimeter, createPerimeterModel, createDecorationModel, decorationModels, perimeterModels, perimeterShape, roundFurnitureCount } from '../src/perimeter.js';
 import { Game, cellKey, perimeterSide } from '../src/game.js';
-import { levels } from '../src/levels.js';
+import { levels, playMap } from '../src/levels.js';
 import { sceneConfig } from '../src/config.js';
 import { ModelFactory } from '../src/model-factory.js';
 import { disposeModel } from '../src/model-resources.js';
@@ -620,5 +620,23 @@ test('Стеллаж для периодики и сундук низкие и �
   }
   for (const id of ids) {
     assert.ok(seen.has(`${id}/true`), `${id}: встречается на переднем краю`);
+  }
+});
+
+
+test('уступ левой стены первой игровой карты остаётся низким', (t) => {
+  let seed = 2026;
+  setRandom(t, () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 2 ** 32; });
+  const { map } = new Game(playMap(levels[0]));
+  for (let iteration = 0; iteration < 8; iteration++) {
+    const scene = setup(map);
+    const models = buildPerimeter(scene, map);
+    for (const y of [5, 6]) {
+      const model = models.find((model) => model.userData.cells.some((cell) => cell.x === 2 && cell.y === y));
+      assert.ok(model);
+      assert.equal(model.userData.front, true);
+      assert.ok(furnitureBounds(model).max.y <= .58, 'Низкая мебель на коротком уступе не закрывает поле');
+    }
+    scene.clearRoom();
   }
 });

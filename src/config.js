@@ -1,6 +1,7 @@
 export const sceneConfig = {
   // Начальный вертикальный угол камеры в градусах.
-  initialVerticalAngle: 38,
+  // initialVerticalAngle: 38,
+  initialVerticalAngle: 53,
   // Равномерный масштаб предметов декора.
   decorationScale: 1.5,
   // Эти модели доступны для просмотра, но запрещены в игровом периметре.
