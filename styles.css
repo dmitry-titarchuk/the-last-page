@@ -290,3 +290,5 @@ h2 { font-size: clamp(14px, 3.8cqmin, 30px); margin-top: 6px; overflow-wrap: any
   .map-shelf { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .map-card { transition: none; } }
+
+.map-card.rolled:disabled { opacity: .8; }

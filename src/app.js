@@ -4,7 +4,7 @@ import { RoomScene } from './scene.js';
 import { renderIntroArtwork } from './intro.js';
 import { setupHorizontalShelf } from './horizontal-shelf.js';
 import { saveSession, readSession, restoreSession } from './session.js';
-import { locations, locationLevels, levelAvailable, readProgress, saveProgress, roomMiniature, mapArtwork } from './atlas.js';
+import { locations, locationLevels, locationAvailable, levelAvailable, resetLegacyProgress, readProgress, saveProgress, roomMiniature, mapArtwork } from './atlas.js';
 
 const element = (id) => document.getElementById(id);
 const stage = element('stage');
@@ -38,6 +38,7 @@ function updateControls() {
 document.addEventListener('pwa-dialog-change', updateControls);
 let storage;
 try { storage = window.localStorage; } catch { /* Хранилище может быть недоступно. */ }
+resetLegacyProgress(storage);
 const completed = readProgress(storage);
 const savedSession = readSession(storage);
 let selectedLocation = null;
@@ -64,11 +65,12 @@ function renderShelf() {
   element('map-shelf').replaceChildren();
   locations.forEach((location, index) => {
     const rooms = locationLevels(location);
-    const unfolded = rooms.length > 0;
+    const unfolded = rooms.length > 0 && locationAvailable(location, completed);
     const count = rooms.filter((room) => completed.has(room.id)).length;
     const button = document.createElement('button');
+    button.disabled = !unfolded;
     button.className = `map-card ${unfolded ? 'unfolded' : 'rolled'}`;
-    button.innerHTML = `${mapArtwork(location.motif, unfolded)}<span class="map-index">КАРТА ${String(index + 1).padStart(2, '0')}</span><span class="map-title">${location.title}</span><span class="map-genre">${location.genre}</span><span class="map-state">${unfolded ? `${count} / ${rooms.length} комнат пройдено · Открыть →` : 'Свиток запечатан · Скоро'}</span>`;
+    button.innerHTML = `${mapArtwork(location.motif, unfolded)}<span class="map-index">КАРТА ${String(index + 1).padStart(2, '0')}</span><span class="map-title">${location.title}</span><span class="map-genre">${location.genre}</span><span class="map-state">${unfolded ? `${count} / ${rooms.length} комнат пройдено · Открыть` : 'Свиток запечатан · Пройдите предыдущую карту'}</span>`;
     button.addEventListener('click', () => showLocation(location));
     element('map-shelf').append(button);
   });
@@ -82,6 +84,7 @@ function showAtlas() {
 }
 
 function showLocation(location) {
+  if (!locationAvailable(location, completed)) return;
   selectedLocation = location;
   element('atlas-view').hidden = true;
   element('location-view').hidden = false;
@@ -120,6 +123,10 @@ function renderRoute() {
   });
 }
 
+function selectedJourneyLocation() {
+  return locations.find((item) => item.levelIds.includes(levels[currentLevel].id));
+}
+
 function currentJourney() {
   const location = locations.find((item) => item.levelIds.includes(levels[currentLevel].id));
   const rooms = location ? locationLevels(location) : levels;
@@ -148,7 +155,7 @@ function update() {
   const journey = currentJourney();
   const lastRoom = journey.index === journey.rooms.length - 1;
   element('victory-text').textContent = lastRoom ? 'Все комнаты этой истории пройдены. Улики восстановлены.' : 'Все улики на своих местах.';
-  element('next').innerHTML = lastRoom ? 'Пройти сначала <span aria-hidden="true">↻</span>' : 'Следующая комната <span aria-hidden="true">→</span>';
+  element('next').textContent = lastRoom ? (locations.indexOf(selectedJourneyLocation()) < locations.length - 1 ? 'Следующая карта' : 'Вернуться к картам') : 'Следующая комната';
   if (game.complete && !completed.has(levels[currentLevel].id)) {
     completed.add(levels[currentLevel].id);
     saveProgress(storage, completed);
@@ -277,7 +284,18 @@ try {
   element('next').addEventListener('click', () => {
     if (!game.complete) return;
     const journey = currentJourney();
-    loadLevel(levels.indexOf(journey.rooms[(journey.index + 1) % journey.rooms.length]));
+    if (journey.index + 1 < journey.rooms.length) {
+      loadLevel(levels.indexOf(journey.rooms[journey.index + 1]));
+    } else {
+      const nextLocation = locations[locations.indexOf(selectedJourneyLocation()) + 1];
+      if (nextLocation && locationAvailable(nextLocation, completed)) {
+        loadLevel(levels.indexOf(locationLevels(nextLocation)[0]));
+      } else {
+        showAtlas();
+        menu.showModal();
+        updateControls();
+      }
+    }
   });
   const keys = { ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down', ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right' };
   document.addEventListener('keydown', (event) => {

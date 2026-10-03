@@ -14,9 +14,25 @@ export function locationLevels(location) {
   return location.levelIds.map((id) => levels.find((level) => level.id === id)).filter(Boolean);
 }
 
+export function locationAvailable(location, completed) {
+  const index = locations.indexOf(location);
+  return index >= 0 && locations.slice(0, index).every((previous) =>
+    previous.levelIds.every((id) => completed.has(id)));
+}
+
+export function resetLegacyProgress(storage) {
+  try {
+    if (storage?.getItem('library-progression-version') === '2') return;
+    storage?.removeItem('lost-endings-progress');
+    storage?.removeItem('library-game-session-v1');
+    storage?.setItem('library-progression-version', '2');
+  } catch { /* Optional storage. */ }
+}
+
 export function levelAvailable(location, index, completed) {
   const rooms = locationLevels(location);
-  return Boolean(rooms[index]) && (index === 0 || completed.has(rooms[index].id) || completed.has(rooms[index - 1].id));
+  return locationAvailable(location, completed) && Boolean(rooms[index])
+    && rooms.slice(0, index).every((room) => completed.has(room.id));
 }
 
 export function readProgress(storage) {

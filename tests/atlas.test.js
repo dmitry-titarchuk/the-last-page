@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { levels } from '../src/levels.js';
-import { locations, locationLevels, levelAvailable, readProgress, saveProgress, roomMiniature } from '../src/atlas.js';
+import { locations, locationLevels, locationAvailable, levelAvailable, resetLegacyProgress, readProgress, saveProgress, roomMiniature } from '../src/atlas.js';
 
 test('миниатюра сохраняет пустоты и использует ширину самой длинной строки', () => {
   const miniature = roomMiniature(['  ###', '### .#', '#@$  #', '#    #', '######']);
@@ -28,7 +28,8 @@ test('пять карт содержат по семь задач Microban в и
     }
     assert.equal(levelAvailable(location, rooms.length, completed), false);
     const repeated = new Set([rooms.at(-1).id]);
-    assert.equal(levelAvailable(location, rooms.length - 1, repeated), true, 'Пройденная комната остаётся доступна');
+    assert.equal(levelAvailable(location, rooms.length - 1, repeated), false, 'Нельзя обходить порядок с неполным прогрессом');
+    assert.equal(levelAvailable(location, rooms.length - 1, completed), true, 'Пройденные комнаты можно повторять');
   });
   assert.equal(levelAvailable({ levelIds: [] }, 0, new Set()), false);
 });
@@ -48,4 +49,33 @@ test('прогресс переживает загрузку и повреждё
   }
   assert.equal(readProgress(undefined).size, 0);
   assert.doesNotThrow(() => saveProgress(undefined, new Set(['microban-01'])));
+});
+
+
+test('карта открывается только после всех предыдущих карт', () => {
+  const completed = new Set();
+  for (let index = 0; index < locations.length; index++) {
+    assert.deepEqual(locations.map((location) => locationAvailable(location, completed)), locations.map((_, i) => i <= index));
+    const rooms = locationLevels(locations[index]);
+    for (const room of rooms.slice(0, -1)) completed.add(room.id);
+    if (locations[index + 1]) {
+      assert.equal(locationAvailable(locations[index + 1], completed), false);
+      assert.equal(levelAvailable(locations[index + 1], 0, completed), false);
+    }
+    completed.add(rooms.at(-1).id);
+  }
+});
+
+test('старое прохождение и партия сбрасываются один раз, новые сохранения остаются', () => {
+  const data = new Map([['lost-endings-progress', '["microban-28"]'], ['library-game-session-v1', 'old']]);
+  const storage = { getItem: (key) => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: (key) => data.delete(key) };
+  resetLegacyProgress(storage);
+  assert.equal(data.has('lost-endings-progress'), false);
+  assert.equal(data.has('library-game-session-v1'), false);
+  saveProgress(storage, new Set(['microban-01']));
+  data.set('library-game-session-v1', 'new');
+  resetLegacyProgress(storage);
+  assert.deepEqual([...readProgress(storage)], ['microban-01']);
+  assert.equal(data.get('library-game-session-v1'), 'new');
+  assert.doesNotThrow(() => resetLegacyProgress(undefined));
 });
