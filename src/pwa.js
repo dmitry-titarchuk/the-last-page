@@ -1,7 +1,12 @@
+import { checkForUpdate } from './pwa-updates.js';
 const dialog = document.getElementById('pwa-install-dialog');
 const confirm = document.getElementById('pwa-install-confirm');
 const description = document.getElementById('pwa-install-description');
 const update = document.getElementById('pwa-update');
+const checkUpdate = document.getElementById('pwa-check-update');
+const updateStatus = document.getElementById('pwa-update-status');
+let startup = true;
+for (const type of ['pointerdown', 'keydown']) document.addEventListener(type, () => { startup = false; }, { once: true, capture: true });
 const buttons = [...document.querySelectorAll('[data-pwa-install]')];
 const standalone = window.matchMedia('(display-mode: standalone)');
 const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -102,9 +107,39 @@ standalone.addEventListener('change', () => {
 window.addEventListener('online', connectionStatus);
 window.addEventListener('offline', connectionStatus);
 
-function showUpdate() { update.hidden = !registration?.waiting; }
+function showUpdate() {
+  update.hidden = !registration?.waiting;
+  if (registration?.waiting && startup && hadController) {
+    startup = false;
+    registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+  }
+}
+checkUpdate.addEventListener('click', async () => {
+  startup = false;
+  if (!registration || !navigator.onLine) {
+    updateStatus.textContent = navigator.onLine ? 'Обновления пока недоступны. Для них нужен HTTPS и поддержка офлайн-режима.' : 'Для проверки обновлений нужен интернет.';
+    return;
+  }
+  checkUpdate.disabled = true;
+  updateStatus.textContent = 'Проверяем и загружаем обновления…';
+  try {
+    const waiting = await checkForUpdate(registration);
+    showUpdate();
+    if (waiting) {
+      updateStatus.textContent = 'Обновление готово. Перезапускаем игру с сохранением партии…';
+      waiting.postMessage({ type: 'SKIP_WAITING' });
+    } else {
+      updateStatus.textContent = 'Установлена последняя версия.';
+    }
+  } catch {
+    updateStatus.textContent = 'Не удалось проверить обновления. Попробуйте ещё раз.';
+  } finally {
+    checkUpdate.disabled = false;
+  }
+});
 update.addEventListener('click', () => {
   if (!registration?.waiting) return;
+  startup = false;
   update.disabled = true;
   registration.waiting.postMessage({ type: 'SKIP_WAITING' });
 });
