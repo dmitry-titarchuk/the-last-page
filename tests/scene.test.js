@@ -667,6 +667,49 @@ test('Касания вне канвы и на кнопках управляют
   assert.equal(click(), false, 'Кнопки меню доступны');
 });
 
+test('Кнопка у края экрана сохраняет click при небольшом движении пальца', () => {
+  const scene = Object.create(RoomScene.prototype);
+  const handlers = new Map();
+  const surface = { addEventListener: (name, handler) => handlers.set(name, handler) };
+  const button = {
+    setPointerCapture() {}, hasPointerCapture() { return false; },
+  };
+  const label = { closest: (selector) => selector === 'button' ? button : null };
+  scene.container = { ownerDocument: { defaultView: { innerWidth: 400 } } };
+  scene.renderer = { domElement: { classList: { add() {}, remove() {} } } };
+  scene.swipeDirection = () => 'right';
+  let moves = 0;
+  scene.onMove = () => { moves++; };
+  scene.setupMouseControls(surface);
+  const send = (type, values = {}) => {
+    let prevented = false;
+    handlers.get(type)({
+      type, target: button, pointerType: 'touch', pointerId: 1, button: 0,
+      clientX: 390, clientY: 700, cancelable: true,
+      preventDefault: () => { prevented = true; },
+      stopImmediatePropagation() {}, ...values,
+    });
+    return prevented;
+  };
+  send('pointerdown');
+  assert.equal(send('touchstart', { target: label, touches: [{ clientX: 390 }] }), false,
+    'Тап по подписи кнопки у края не отменяется');
+  send('pointermove', { clientX: 386, clientY: 704 });
+  assert.equal(send('touchmove'), false, 'Небольшое смещение не отменяет click');
+  send('pointerup', { clientX: 386, clientY: 704 });
+  assert.equal(send('click', { detail: 1 }), false);
+  assert.equal(moves, 0);
+
+  send('pointerdown');
+  send('pointermove', { clientX: 350 });
+  assert.equal(send('touchmove'), true, 'Распознанный свайп отменяет стандартное действие');
+  send('pointerup', { clientX: 350 });
+  assert.equal(send('click', { detail: 1 }), true, 'Свайп не нажимает кнопку');
+  assert.equal(moves, 1);
+  assert.equal(send('touchstart', { touches: [{ clientX: 390 }] }), true,
+    'Касание края вне кнопки по-прежнему защищено от жестов браузера');
+});
+
 test('Комната заполняет кадр без запаса и обрезания при разных наклонах и пропорциях экрана', () => {
   const scene = Object.create(RoomScene.prototype);
   scene.camera = new THREE.PerspectiveCamera(32, 1, .1, 100);

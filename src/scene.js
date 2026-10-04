@@ -903,12 +903,16 @@ export class RoomScene extends ModelFactory {
       { capture, signal: this.listeners?.signal });
     surface.addEventListener('touchstart', (event) => {
       if (!this.controlsEnabled || event.touches.length !== 1) return;
+      // Отмена touchstart лишает Android последующего click по кнопке.
+      if (event.target?.closest?.('button')) return;
       const x = event.touches[0].clientX;
       const width = this.container?.ownerDocument?.defaultView?.innerWidth ?? globalThis.innerWidth;
       if (event.cancelable && (x < 24 || x > width - 24)) event.preventDefault();
     }, { passive: false, signal: this.listeners?.signal });
     surface.addEventListener('touchmove', (event) => {
-      if (this.controlsEnabled && gesture && event.cancelable) event.preventDefault();
+      // Дрожание пальца при тапе ещё не является свайпом.
+      const dragging = gesture?.moved || gesture?.type === 'tilt' || gesture?.type === 'cancelled';
+      if (this.controlsEnabled && dragging && event.cancelable) event.preventDefault();
     }, { passive: false, signal: this.listeners?.signal });
     listen('pointerdown', (event) => {
       if (!this.controlsEnabled || event.button !== 0) return;
