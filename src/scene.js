@@ -53,6 +53,7 @@ export class RoomScene extends ModelFactory {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(32, 1, .1, 100);
     this.verticalAngle = sceneConfig.initialVerticalAngle;
+    this.horizontalAngle = Math.atan2(.6, .8);
     this.fitCamera();
     this.setupMouseControls(container.ownerDocument);
     this.scene.add(new THREE.HemisphereLight(0xfff0cf, 0x45585a, 2.5));
@@ -894,6 +895,10 @@ export class RoomScene extends ModelFactory {
       return Math.hypot(a.x - b.x, a.y - b.y);
     };
     const midpoint = () => [...pointers.values()].reduce((sum, point) => sum + point.y, 0) / pointers.size;
+    const twistAngle = () => {
+      const [a, b] = [...pointers.values()];
+      return Math.atan2(b.y - a.y, b.x - a.x);
+    };
     const listen = (name, handler, capture = false) => surface.addEventListener(name, handler,
       { capture, signal: this.listeners?.signal });
     surface.addEventListener('touchstart', (event) => {
@@ -924,7 +929,9 @@ export class RoomScene extends ModelFactory {
         gesture = { type: 'swipe', x: event.clientX, y: event.clientY };
       } else if (pointers.size === 2 && gesture?.type === 'swipe') {
         this.heldDirection = null;
-        gesture = { type: 'tilt', y: midpoint(), angle: this.verticalAngle, distance: separation(), zoom: this.zoom ?? 1 };
+        gesture = { type: 'tilt', y: midpoint(), angle: this.verticalAngle, distance: separation(), zoom: this.zoom ?? 1,
+          mode: null, twist: twistAngle(), rotation: 0, horizontal: this.horizontalAngle ?? Math.atan2(.6, .8),
+          origins: [...pointers.values()].map((point) => ({ ...point })) };
       } else {
         this.heldDirection = null;
         gesture = { type: 'cancelled' };
@@ -951,11 +958,52 @@ export class RoomScene extends ModelFactory {
         return;
       }
       if (gesture?.type !== 'mouse' && gesture?.type !== 'tilt') return;
-      if (gesture.type === 'tilt' && gesture.distance > 0) {
-        this.zoom = THREE.MathUtils.clamp(gesture.zoom * separation() / gesture.distance, 1, 3);
+      if (gesture.type === 'mouse') {
+        this.verticalAngle = THREE.MathUtils.clamp(gesture.angle + (event.clientY - gesture.y) * .2, 15, 85);
+      } else {
+        const distance = separation();
+        const y = midpoint();
+        const twist = twistAngle();
+        if (distance >= 24 && gesture.distance >= 24) {
+          const delta = twist - gesture.twist;
+          // Кратчайшая дуга: переход через ±π не делает полный оборот.
+          gesture.rotation += Math.atan2(Math.sin(delta), Math.cos(delta));
+        }
+        gesture.twist = twist;
+        if (!gesture.mode) {
+          const movements = [...pointers.values()].map((point, index) => new THREE.Vector2(
+            point.x - gesture.origins[index].x, point.y - gesture.origins[index].y));
+          const bothMoved = movements.every((move) => move.length() >= 6);
+          const dot = movements[0].dot(movements[1]);
+          // Сравниваем движения в пикселях. До распознавания камера
+          // неподвижна: поочерёдные события пальцев не меняют масштаб.
+          const rotation = Math.abs(gesture.rotation) * gesture.distance / 2;
+          const pinch = Math.abs(distance - gesture.distance) / 2;
+          const tilt = Math.abs(y - gesture.y);
+          if (gesture.distance < 24) {
+            gesture.mode = 'tilt';
+          } else if (bothMoved && dot < 0 && rotation >= 6
+            && Math.abs(gesture.rotation) >= THREE.MathUtils.degToRad(4)
+            && rotation > pinch * 1.25 && rotation > tilt * 1.25) {
+            gesture.mode = 'rotate';
+          } else if (pinch >= 6 && pinch > rotation * 1.25 && pinch >= tilt * .9) {
+            gesture.mode = 'pinch';
+          } else if (bothMoved && dot > 0 && tilt >= 6
+            && tilt > pinch * 1.25 && tilt > rotation * 1.25) {
+            gesture.mode = 'tilt';
+          }
+        }
+        // Один режим на всё касание. Новый жест — после отпускания пальцев.
+        if (gesture.mode === 'rotate') {
+          this.horizontalAngle = gesture.horizontal + gesture.rotation;
+        } else if (gesture.mode === 'pinch') {
+          this.zoom = THREE.MathUtils.clamp(gesture.zoom * distance / gesture.distance, 1, 3);
+        } else if (gesture.mode === 'tilt') {
+          this.verticalAngle = THREE.MathUtils.clamp(gesture.angle + (y - gesture.y) * .2, 15, 85);
+        } else {
+          return;
+        }
       }
-      const y = gesture.type === 'tilt' ? midpoint() : event.clientY;
-      this.verticalAngle = THREE.MathUtils.clamp(gesture.angle + (y - gesture.y) * .2, 15, 85);
       this.fitCamera();
     });
     const end = (event) => {
@@ -1052,8 +1100,7 @@ export class RoomScene extends ModelFactory {
     );
     const target = bounds.getCenter(new THREE.Vector3());
     const angle = THREE.MathUtils.degToRad(this.verticalAngle);
-    const progress = THREE.MathUtils.clamp((this.verticalAngle - sceneConfig.initialVerticalAngle) / Math.max(1, 85 - sceneConfig.initialVerticalAngle), 0, 1);
-    const horizontalAngle = THREE.MathUtils.lerp(Math.atan2(.6, .8), THREE.MathUtils.degToRad(5), progress);
+    const horizontalAngle = this.horizontalAngle ?? Math.atan2(.6, .8);
     const direction = new THREE.Vector3(Math.sin(horizontalAngle) * Math.cos(angle), Math.sin(angle), Math.cos(horizontalAngle) * Math.cos(angle));
     this.camera.position.copy(target).add(direction);
     this.camera.lookAt(target);

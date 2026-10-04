@@ -19,7 +19,7 @@
   <body>
     <main id="game-shell" class="shell">
       <section class="play-panel" aria-label="Головоломка">
-        <div id="stage" class="stage" tabindex="0" aria-label="Игровое поле. Стрелки, WASD или свайп — движение. Z — отмена. Мышь или два пальца вверх и вниз — наклон камеры. Щипок — масштаб до трёх раз.">
+        <div id="stage" class="stage" tabindex="0" aria-label="Игровое поле. Стрелки, WASD или свайп — движение. Z — отмена. Мышь или два пальца вверх и вниз — наклон камеры. Щипок — масштаб до трёх раз. Скручивание двумя пальцами — вращение поля.">
         </div>
         <div class="hud">
           <header class="room-header overlay">
@@ -31,7 +31,7 @@
           </div>
           <div class="play-info overlay">
             <div id="status" class="status" role="status" aria-live="polite">Верните улики на свои места</div>
-            <p class="footnote">Стрелки / WASD — ход.<br />Свайп в любом месте экрана — по направлению поля.<br />Два пальца ↕ — наклон. Щипок — масштаб.<br />Сундуки можно толкать, но нельзя тянуть.</p>
+            <p class="footnote">Стрелки / WASD — ход.<br />Свайп в любом месте экрана — по направлению поля.<br />Два пальца ↕ — наклон. Щипок — масштаб.<br />Скручивание двумя пальцами — вращение поля.<br />Сундуки можно толкать, но нельзя тянуть.</p>
           </div>
           <div class="actions overlay"><button id="undo" disabled aria-label="Отменить ход (Z)"><span aria-hidden="true">↶</span><span class="action-label">Отменить</span></button><button id="restart" aria-label="Начать комнату заново"><span aria-hidden="true">↻</span><span class="action-label">Заново</span></button></div>
           <button id="menu-open" class="menu-open" aria-label="Меню" aria-haspopup="dialog" aria-controls="level-menu" aria-expanded="false">☰ <span>Меню</span></button>
@@ -126,7 +126,7 @@
           <p id="instruction"></p>
           <div class="legend"><span><i class="crate-symbol"></i>Сундук с книгами</span><span><i class="goal-symbol"></i>Место для улики</span></div>
         </section>
-        <p class="menu-help">Стрелки / WASD — движение. Свайп в любом месте экрана — ход по видимому направлению сетки. Z — отмена. Перетаскивание мышью или двумя пальцами вверх и вниз — наклон камеры. Щипок — масштаб до ×3.</p>
+        <p class="menu-help">Стрелки / WASD — движение. Свайп в любом месте экрана — ход по видимому направлению сетки. Z — отмена. Перетаскивание мышью или двумя пальцами вверх и вниз — наклон камеры. Щипок — масштаб до ×3. Для вращения поля поворачивайте два пальца вокруг их общей середины.</p>
         <div class="margin-note">«Если книга обрывается,<br />ищи то, что из неё убрали».<span>Из письма хранителя</span></div>
         <section class="pwa-settings" aria-label="Приложение">
           <p data-pwa-status role="status">Подготовка игры для офлайн…</p>

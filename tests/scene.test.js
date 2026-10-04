@@ -717,17 +717,18 @@ test('Плотное кадрирование сохраняет предмет�
   assert.notEqual(scene.cameraFitPoints, points, 'Новая комната перестраивает границы кадра');
 });
 
-test('Горизонтальный угол линейно стремится к 5° только выше исходного наклона', () => {
+test('Наклон камеры сохраняет выбранный горизонтальный угол', () => {
   const scene = Object.create(RoomScene.prototype);
   scene.camera = new THREE.PerspectiveCamera(32, 1, .1, 100);
-  const initial = THREE.MathUtils.radToDeg(Math.atan2(.6, .8));
-  for (const [vertical, horizontal] of [[15, initial], [sceneConfig.initialVerticalAngle, initial],
-    [(sceneConfig.initialVerticalAngle + 85) / 2, (initial + 5) / 2], [85, 5], [23, initial]]) {
-    scene.verticalAngle = vertical;
-    scene.fitCamera();
-    const direction = scene.camera.getWorldDirection(new THREE.Vector3());
-    const actual = THREE.MathUtils.radToDeg(Math.atan2(-direction.x, -direction.z));
-    assert.ok(Math.abs(actual - horizontal) < 1e-10);
+  for (const horizontal of [Math.atan2(.6, .8), -2, 0, 2, Math.PI]) {
+    scene.horizontalAngle = horizontal;
+    for (const vertical of [15, sceneConfig.initialVerticalAngle, 65, 85, 23]) {
+      scene.verticalAngle = vertical;
+      scene.fitCamera();
+      const direction = scene.camera.getWorldDirection(new THREE.Vector3());
+      const actual = Math.atan2(-direction.x, -direction.z);
+      assert.ok(Math.abs(Math.atan2(Math.sin(actual - horizontal), Math.cos(actual - horizontal))) < 1e-10);
+    }
   }
 });
 
@@ -1393,4 +1394,115 @@ test('Удержание свайпа повторяет шаги, щипок о
   send('pointermove', { clientX: 140 });
   scene.load(game.map, game.state);
   assert.equal(scene.heldDirection, null, 'Загрузка отменяет удержание');
+});
+
+test('Два пальца разделяют наклон, щипок и вращение, включая переход через ±π', () => {
+  const scene = Object.create(RoomScene.prototype);
+  const handlers = new Map();
+  scene.renderer = { domElement: {
+    addEventListener: (name, handler) => handlers.set(name, handler),
+    classList: { add() {}, remove() {} },
+    setPointerCapture() {}, hasPointerCapture() { return false; },
+  } };
+  scene.verticalAngle = 53;
+  scene.horizontalAngle = .6;
+  scene.zoom = 1;
+  scene.fitCamera = () => {};
+  scene.onMove = () => assert.fail('Жест камеры не двигает героя');
+  scene.setupMouseControls();
+  const send = (type, id, x, y) => handlers.get(type)({ type, pointerType: 'touch', pointerId: id, button: 0, clientX: x, clientY: y });
+  send('pointerdown', 1, 100, 200);
+  send('pointerdown', 2, 300, 200);
+  send('pointermove', 1, 100, 240);
+  send('pointermove', 2, 300, 240);
+  assert.equal(scene.verticalAngle, 61);
+  assert.equal(scene.horizontalAngle, .6, 'Параллельное движение не вращает');
+  scene.cancelControls();
+
+  send('pointerdown', 1, 100, 200);
+  send('pointerdown', 2, 300, 200);
+  send('pointermove', 1, 50, 200);
+  send('pointermove', 2, 350, 200);
+  assert.equal(scene.zoom, 1.5);
+  assert.equal(scene.verticalAngle, 61);
+  assert.equal(scene.horizontalAngle, .6);
+  scene.cancelControls();
+
+  for (const start of [0, Math.PI - .1, -Math.PI + .1]) {
+    scene.zoom = 1;
+    scene.verticalAngle = 53;
+    scene.horizontalAngle = .6;
+    const point = (id, angle) => [200 + (id === 1 ? -1 : 1) * 100 * Math.cos(angle),
+      200 + (id === 1 ? -1 : 1) * 100 * Math.sin(angle)];
+    for (const id of [1, 2]) send('pointerdown', id, ...point(id, start));
+    for (const delta of [.3, .6, 1, -.5, -1]) {
+      for (const id of [1, 2]) {
+        send('pointermove', id, ...point(id, start + delta));
+        assert.equal(scene.zoom, 1, 'Масштаб неподвижен даже между событиями двух пальцев');
+        assert.equal(scene.verticalAngle, 53, 'Наклон неподвижен даже между событиями двух пальцев');
+      }
+      assert.ok(Math.abs(scene.horizontalAngle - (.6 + delta)) < 1e-10, 'Вращение следует пальцам без скачка на границе ±π');
+      assert.equal(scene.verticalAngle, 53, 'Вращение сохраняет наклон');
+      assert.ok(Math.abs(scene.zoom - 1) < 1e-10, 'Чистое вращение сохраняет масштаб');
+    }
+    send('pointerup', 2, ...point(2, start - 1));
+    const rotation = scene.horizontalAngle;
+    send('pointermove', 1, 600, 600);
+    assert.equal(scene.horizontalAngle, rotation, 'Оставшийся палец не продолжает вращение или ход');
+    send('pointerup', 1, 600, 600);
+  }
+});
+
+
+test('Распознанный жест камеры фиксирует режим до отпускания пальцев', () => {
+  const scene = Object.create(RoomScene.prototype);
+  const handlers = new Map();
+  scene.renderer = { domElement: {
+    addEventListener: (name, handler) => handlers.set(name, handler),
+    classList: { add() {}, remove() {} },
+    setPointerCapture() {}, hasPointerCapture() { return false; },
+  } };
+  scene.fitCamera = () => {};
+  scene.onMove = () => assert.fail('Жест камеры не двигает героя');
+  scene.setupMouseControls();
+  const send = (type, id, x, y) => handlers.get(type)({ type, pointerType: 'touch', pointerId: id, button: 0, clientX: x, clientY: y });
+  const begin = () => {
+    scene.cancelControls();
+    scene.zoom = 2;
+    scene.verticalAngle = 53;
+    scene.horizontalAngle = .6;
+    send('pointerdown', 1, 100, 200);
+    send('pointerdown', 2, 300, 200);
+  };
+  begin();
+  send('pointermove', 1, 101, 202);
+  send('pointermove', 2, 299, 198);
+  assert.equal(scene.zoom, 2, 'Мелкое дрожание до распознавания не меняет камеру');
+  assert.equal(scene.verticalAngle, 53);
+  assert.equal(scene.horizontalAngle, .6);
+  send('pointermove', 1, 110, 160);
+  send('pointermove', 2, 290, 240);
+  assert.ok(scene.horizontalAngle > .6, 'Распознано вращение');
+  for (const [id, x, y] of [[1, 30, 100], [2, 400, 380], [1, 140, 170], [2, 250, 260]]) {
+    send('pointermove', id, x, y);
+    assert.equal(scene.zoom, 2, 'При вращении даже сильное изменение расстояния не масштабирует');
+    assert.equal(scene.verticalAngle, 53, 'При вращении смещение середины не наклоняет');
+  }
+
+  begin();
+  send('pointermove', 2, 350, 200);
+  assert.equal(scene.zoom, 2.5, 'Распознан щипок');
+  send('pointermove', 1, 160, 100);
+  send('pointermove', 2, 240, 300);
+  assert.equal(scene.horizontalAngle, .6, 'Щипок не превращается во вращение');
+  assert.equal(scene.verticalAngle, 53);
+
+  begin();
+  send('pointermove', 1, 100, 230);
+  send('pointermove', 2, 300, 230);
+  assert.equal(scene.verticalAngle, 59, 'Распознан наклон');
+  send('pointermove', 1, 20, 270);
+  send('pointermove', 2, 400, 220);
+  assert.equal(scene.zoom, 2, 'Наклон не превращается в масштабирование');
+  assert.equal(scene.horizontalAngle, .6, 'Наклон не превращается во вращение');
 });

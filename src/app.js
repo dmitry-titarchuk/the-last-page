@@ -3,6 +3,7 @@ import { Game, cellKey, directions } from './game.js';
 import { levels, playMap } from './levels.js';
 import { RoomScene } from './scene.js';
 import { renderIntroArtwork } from './intro.js';
+import { setupBackNavigation } from './back-navigation.js';
 import { setupHorizontalShelf } from './horizontal-shelf.js';
 import { saveSession, readSession, restoreSession } from './session.js';
 import { locations, locationLevels, locationAvailable, levelAvailable, resetLegacyProgress, readProgress, saveProgress, roomMiniature, mapArtwork } from './atlas.js';
@@ -31,6 +32,13 @@ let currentLevel = 0;
 let game;
 let scene;
 let pendingDirection = null;
+setupBackNavigation(window, document, () => {
+  pendingDirection = null;
+  scene?.cancelControls?.();
+  // Обычно Chrome сам закрывает верхний dialog. Это также поддерживает
+  // браузеры, которые передают Back прямо в историю страницы.
+  [...document.querySelectorAll('dialog[open]')].at(-1)?.close();
+});
 function updateControls() {
   pendingDirection = null;
   scene?.cancelControls?.();
