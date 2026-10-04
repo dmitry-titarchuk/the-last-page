@@ -19,7 +19,7 @@
   <body>
     <main id="game-shell" class="shell">
       <section class="play-panel" aria-label="Головоломка">
-        <div id="stage" class="stage" tabindex="0" aria-label="Игровое поле. Стрелки, WASD или свайп — движение. Z — отмена. Мышь или два пальца вверх и вниз — наклон камеры.">
+        <div id="stage" class="stage" tabindex="0" aria-label="Игровое поле. Стрелки, WASD или свайп — движение. Z — отмена. Мышь или два пальца вверх и вниз — наклон камеры. Щипок — масштаб до трёх раз.">
         </div>
         <div class="hud">
           <header class="room-header overlay">
@@ -31,12 +31,35 @@
           </div>
           <div class="play-info overlay">
             <div id="status" class="status" role="status" aria-live="polite">Верните улики на свои места</div>
-            <p class="footnote">Стрелки / WASD — ход.<br />Свайп в любом месте экрана — по направлению поля.<br />Мышь / два пальца ↕ — наклон.<br />Сундуки можно толкать, но нельзя тянуть.</p>
+            <p class="footnote">Стрелки / WASD — ход.<br />Свайп в любом месте экрана — по направлению поля.<br />Два пальца ↕ — наклон. Щипок — масштаб.<br />Сундуки можно толкать, но нельзя тянуть.</p>
           </div>
           <div class="actions overlay"><button id="undo" disabled aria-label="Отменить ход (Z)"><span aria-hidden="true">↶</span><span class="action-label">Отменить</span></button><button id="restart" aria-label="Начать комнату заново"><span aria-hidden="true">↻</span><span class="action-label">Заново</span></button></div>
           <button id="menu-open" class="menu-open" aria-label="Меню" aria-haspopup="dialog" aria-controls="level-menu" aria-expanded="false">☰ <span>Меню</span></button>
           <div id="error" class="error" role="alert" hidden></div>
           <section id="victory" class="victory" aria-live="polite" aria-labelledby="victory-title" hidden>
+            <svg id="victory-scroll" class="victory-scroll" viewBox="0 0 240 132" aria-hidden="true" focusable="false" hidden>
+              <g class="scroll-paper">
+                <path d="M44 20h152v92H44z" fill="#ead4a1" stroke="#a78950" stroke-width="1.5"/>
+                <path d="M51 28h138v76H51z" fill="none" stroke="#a78950" stroke-opacity=".35"/>
+                <g class="scroll-map" fill="none" stroke="#766447" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m66 87 24-28 30 14 25-29 28 8" stroke-dasharray="3 5"/>
+                  <path d="M61 87V74l7-5 7 5v13zm21-29V45l7-5 7 5v13zm31 16V61l7-5 7 5v13zm25-31V30l7-5 7 5v13z" fill="#d7be87"/>
+                  <path d="m172 83 4-10 4 10-4 10zM166 83h20"/>
+                  <path d="m135 87 5 5 11-12" stroke="#53745b" stroke-width="3"/>
+                </g>
+              </g>
+              <g class="scroll-upper" stroke="#957440" stroke-width="1.5">
+                <rect x="36" y="14" width="168" height="12" rx="6" fill="#c9a362"/>
+                <path d="M46 18h148" stroke="#f5e2b9"/>
+                <ellipse cx="39" cy="20" rx="4" ry="7" fill="#e4c58c"/><ellipse cx="201" cy="20" rx="4" ry="7" fill="#e4c58c"/>
+              </g>
+              <g class="scroll-lower" stroke="#957440" stroke-width="1.5">
+                <rect x="36" y="106" width="168" height="12" rx="6" fill="#c9a362"/>
+                <path d="M46 110h148" stroke="#f5e2b9"/>
+                <ellipse cx="39" cy="112" rx="4" ry="7" fill="#e4c58c"/><ellipse cx="201" cy="112" rx="4" ry="7" fill="#e4c58c"/>
+              </g>
+              <g class="scroll-spark" fill="#e8ce8e"><path d="m20 35 3 7 7 3-7 3-3 7-3-7-7-3 7-3zM216 65l3 7 7 3-7 3-3 7-3-7-7-3 7-3zM22 100l2 4 4 2-4 2-2 4-2-4-4-2 4-2z"/></g>
+            </svg>
             <div class="victory-stars" aria-hidden="true">✦ ★ ✦</div>
             <div><span class="eyebrow">ПРЕКРАСНАЯ РАБОТА!</span><h2 id="victory-title">Комната восстановлена!</h2><p id="victory-text">Все улики на своих местах.</p></div>
             <button id="next" class="primary">Следующая комната</button>
@@ -44,7 +67,7 @@
         </div>
       </section>
     </main>
-    <dialog id="story-intro" class="story-intro" aria-labelledby="intro-title" aria-describedby="intro-description">
+    <dialog id="story-intro" tabindex="-1" class="story-intro" aria-labelledby="intro-title" aria-describedby="intro-description">
       <div class="intro-page">
         <header class="intro-header">
           <span class="eyebrow">ПОСЛЕДНЯЯ СТРАНИЦА · ПРОЛОГ</span>
@@ -103,7 +126,7 @@
           <p id="instruction"></p>
           <div class="legend"><span><i class="crate-symbol"></i>Сундук с книгами</span><span><i class="goal-symbol"></i>Место для улики</span></div>
         </section>
-        <p class="menu-help">Стрелки / WASD — движение. Свайп в любом месте экрана — ход по видимому направлению сетки. Z — отмена. Перетаскивание мышью или двумя пальцами вверх и вниз — наклон камеры.</p>
+        <p class="menu-help">Стрелки / WASD — движение. Свайп в любом месте экрана — ход по видимому направлению сетки. Z — отмена. Перетаскивание мышью или двумя пальцами вверх и вниз — наклон камеры. Щипок — масштаб до ×3.</p>
         <div class="margin-note">«Если книга обрывается,<br />ищи то, что из неё убрали».<span>Из письма хранителя</span></div>
         <section class="pwa-settings" aria-label="Приложение">
           <p data-pwa-status role="status">Подготовка игры для офлайн…</p>
@@ -117,7 +140,7 @@
       </div>
     </dialog>
     <dialog id="licenses-dialog" class="legal-dialog" aria-label="Лицензия и авторские права">
-      <button id="licenses-back" class="document-link">Назад</button>
+      <button id="licenses-back" class="document-back" aria-label="Назад"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M19 12H5m6-6-6 6 6 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <main id="licenses-content" class="document-paper"></main>
     </dialog>
     <script type="module" src="./src/licenses.js"></script>

@@ -136,6 +136,8 @@ export class RoomScene extends ModelFactory {
 
   load(map, state, { tutorial = false } = {}) {
     this.clearRoom();
+    this.cancelControls?.();
+    this.zoom = 1;
     this.map = map;
     this.guidance = new Guidance(map);
     this.tutorial = tutorial;
@@ -146,7 +148,9 @@ export class RoomScene extends ModelFactory {
     this.action = null;
     this.room = new THREE.Group();
     this.scene.add(this.room);
-    const floorMaterials = [this.material(0x655948), this.material(0x72624d)];
+    this.floorMaterials = [this.material(0x655948), this.material(0x72624d)];
+    this.setFloorDarkening(sceneConfig.floorDarkening);
+    const floorMaterials = this.floorMaterials;
     const edge = this.material(0x283533);
     // Основание повторяет контур комнаты, не закрывая пустоты .sok.
     if (!map.exterior.size) {
@@ -705,6 +709,7 @@ export class RoomScene extends ModelFactory {
     this.rig.scale.set(1, 1, 1);
     this.headPivot.rotation.set(0, 0, 0);
     this.hatPivot.rotation.set(0, 0, 0);
+    this.hatPivot.position.copy(this.hatRestPosition);
     [...this.arms, ...this.legs].forEach((limb) => limb.rotation.set(0, 0, 0));
   }
 
@@ -783,6 +788,7 @@ export class RoomScene extends ModelFactory {
       this.arms[1].rotation.x = -2.65 * effort;
       this.arms[1].rotation.z = .38 * effort;
       this.hatPivot.rotation.x = -.3 * effort;
+      this.hatPivot.position.y += .015 * effort;
       this.headPivot.rotation.z = -.045 * effort;
     } else if (action.type === 'look') {
       this.headPivot.rotation.y = Math.sin(progress * Math.PI * 2) * .3 * effort;
@@ -879,12 +885,26 @@ export class RoomScene extends ModelFactory {
       const ids = [...pointers.keys()];
       pointers.clear();
       gesture = null;
+      this.heldDirection = null;
       canvas.classList.remove('is-dragging');
       ids.forEach(release);
+    };
+    const separation = () => {
+      const [a, b] = [...pointers.values()];
+      return Math.hypot(a.x - b.x, a.y - b.y);
     };
     const midpoint = () => [...pointers.values()].reduce((sum, point) => sum + point.y, 0) / pointers.size;
     const listen = (name, handler, capture = false) => surface.addEventListener(name, handler,
       { capture, signal: this.listeners?.signal });
+    surface.addEventListener('touchstart', (event) => {
+      if (!this.controlsEnabled || event.touches.length !== 1) return;
+      const x = event.touches[0].clientX;
+      const width = this.container?.ownerDocument?.defaultView?.innerWidth ?? globalThis.innerWidth;
+      if (event.cancelable && (x < 24 || x > width - 24)) event.preventDefault();
+    }, { passive: false, signal: this.listeners?.signal });
+    surface.addEventListener('touchmove', (event) => {
+      if (this.controlsEnabled && gesture && event.cancelable) event.preventDefault();
+    }, { passive: false, signal: this.listeners?.signal });
     listen('pointerdown', (event) => {
       if (!this.controlsEnabled || event.button !== 0) return;
       const touch = event.pointerType === 'touch';
@@ -903,15 +923,37 @@ export class RoomScene extends ModelFactory {
       } else if (pointers.size === 1) {
         gesture = { type: 'swipe', x: event.clientX, y: event.clientY };
       } else if (pointers.size === 2 && gesture?.type === 'swipe') {
-        gesture = { type: 'tilt', y: midpoint(), angle: this.verticalAngle };
+        this.heldDirection = null;
+        gesture = { type: 'tilt', y: midpoint(), angle: this.verticalAngle, distance: separation(), zoom: this.zoom ?? 1 };
       } else {
+        this.heldDirection = null;
         gesture = { type: 'cancelled' };
       }
     });
     listen('pointermove', (event) => {
       if (!this.controlsEnabled || !pointers.has(event.pointerId)) return;
       pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (gesture?.type === 'swipe') {
+        const dx = event.clientX - gesture.x;
+        const dy = event.clientY - gesture.y;
+        if (Math.hypot(dx, dy) >= 24) {
+          const direction = this.swipeDirection(dx, dy);
+          const first = !gesture.moved;
+          gesture.moved = true;
+          this.heldDirection = direction;
+          if (first) {
+            this.nextHeldMove = performance.now() + 160;
+            this.onMove?.(direction);
+          }
+          gesture.x = event.clientX - dx / Math.hypot(dx, dy) * 24;
+          gesture.y = event.clientY - dy / Math.hypot(dx, dy) * 24;
+        }
+        return;
+      }
       if (gesture?.type !== 'mouse' && gesture?.type !== 'tilt') return;
+      if (gesture.type === 'tilt' && gesture.distance > 0) {
+        this.zoom = THREE.MathUtils.clamp(gesture.zoom * separation() / gesture.distance, 1, 3);
+      }
       const y = gesture.type === 'tilt' ? midpoint() : event.clientY;
       this.verticalAngle = THREE.MathUtils.clamp(gesture.angle + (y - gesture.y) * .2, 15, 85);
       this.fitCamera();
@@ -919,6 +961,7 @@ export class RoomScene extends ModelFactory {
     const end = (event) => {
       if (!pointers.has(event.pointerId)) return;
       const finished = gesture;
+      this.heldDirection = null;
       const target = captureTargets.get(event.pointerId);
       pointers.delete(event.pointerId);
       gesture = pointers.size ? { type: 'cancelled' } : null;
@@ -932,9 +975,9 @@ export class RoomScene extends ModelFactory {
       if (finished?.type !== 'swipe') return;
       const dx = event.clientX - finished.x;
       const dy = event.clientY - finished.y;
-      if (Math.hypot(dx, dy) < 24) return;
+      if (!finished.moved && Math.hypot(dx, dy) < 24) return;
       suppressedClicks.set(event.pointerId, { target, until: Date.now() + 800 });
-      this.onMove?.(this.swipeDirection(dx, dy));
+      if (!finished.moved) this.onMove?.(this.swipeDirection(dx, dy));
     };
     listen('pointerup', end);
     listen('pointercancel', end);
@@ -955,6 +998,34 @@ export class RoomScene extends ModelFactory {
         }
       }
     }, true);
+  }
+
+  setFloorDarkening(value) {
+    const amount = THREE.MathUtils.clamp(Number(value) || 0, 0, .8);
+    sceneConfig.floorDarkening = amount;
+    this.floorMaterials?.forEach((material, index) => {
+      material.color.setHex([0x655948, 0x72624d][index]).multiplyScalar(1 - amount);
+    });
+    return amount;
+  }
+
+  setZoom(value) {
+    this.zoom = THREE.MathUtils.clamp(Number(value) || 1, 1, 3);
+    this.fitCamera();
+  }
+
+  updateFollowCamera() {
+    if (!this.cameraFollow || !this.player || (this.zoom ?? 1) <= 1) return;
+    const { target, direction, distance, rotation, inverse, limits } = this.cameraFollow;
+    const player = this.player.position.clone().add(new THREE.Vector3(0, .65, 0))
+      .sub(target).applyQuaternion(inverse);
+    const clamp = (value, min, max) => min > max ? (min + max) / 2 : THREE.MathUtils.clamp(value, min, max);
+    const offset = new THREE.Vector3(clamp(player.x, limits.min.x, limits.max.x),
+      clamp(player.y, limits.min.y, limits.max.y), 0).applyQuaternion(rotation);
+    const focus = target.clone().add(offset);
+    this.camera.position.copy(focus).addScaledVector(direction, distance);
+    this.camera.lookAt(focus);
+    this.camera.updateMatrixWorld(true);
   }
 
   resize() {
@@ -981,7 +1052,7 @@ export class RoomScene extends ModelFactory {
     );
     const target = bounds.getCenter(new THREE.Vector3());
     const angle = THREE.MathUtils.degToRad(this.verticalAngle);
-    const progress = THREE.MathUtils.clamp((this.verticalAngle - sceneConfig.initialVerticalAngle) / (85 - sceneConfig.initialVerticalAngle), 0, 1);
+    const progress = THREE.MathUtils.clamp((this.verticalAngle - sceneConfig.initialVerticalAngle) / Math.max(1, 85 - sceneConfig.initialVerticalAngle), 0, 1);
     const horizontalAngle = THREE.MathUtils.lerp(Math.atan2(.6, .8), THREE.MathUtils.degToRad(5), progress);
     const direction = new THREE.Vector3(Math.sin(horizontalAngle) * Math.cos(angle), Math.sin(angle), Math.cos(horizontalAngle) * Math.cos(angle));
     this.camera.position.copy(target).add(direction);
@@ -1008,13 +1079,31 @@ export class RoomScene extends ModelFactory {
       (maximum.y - minimum.y) / (2 * tanHalfFov), nearest + this.camera.near);
     const offset = new THREE.Vector3((maximum.x + minimum.x) / 2, (maximum.y + minimum.y) / 2, 0);
     target.add(offset.applyQuaternion(this.camera.quaternion));
-    this.camera.position.copy(target).addScaledVector(direction, distance);
+    const zoomDistance = distance / (this.zoom ?? 1);
+    const limits = { min: new THREE.Vector2(Infinity, Infinity), max: new THREE.Vector2(-Infinity, -Infinity) };
+    for (const corner of points) {
+      const point = corner.clone().sub(target).applyQuaternion(inverseRotation);
+      const halfHeight = tanHalfFov * (zoomDistance - point.z);
+      const halfWidth = halfHeight * this.camera.aspect;
+      limits.min.x = Math.min(limits.min.x, point.x + halfWidth);
+      limits.max.x = Math.max(limits.max.x, point.x - halfWidth);
+      limits.min.y = Math.min(limits.min.y, point.y + halfHeight);
+      limits.max.y = Math.max(limits.max.y, point.y - halfHeight);
+    }
+    this.cameraFollow = { target: target.clone(), direction, distance: zoomDistance,
+      rotation: this.camera.quaternion.clone(), inverse: inverseRotation, limits };
+    this.camera.position.copy(target).addScaledVector(direction, zoomDistance);
     this.camera.lookAt(target);
     this.camera.far = distance + bounds.getSize(new THREE.Vector3()).length();
     this.camera.updateProjectionMatrix();
+    this.updateFollowCamera();
   }
 
   frame(time) {
+    if (this.heldDirection && this.controlsEnabled && !this.busy && time >= (this.nextHeldMove ?? 0)) {
+      this.nextHeldMove = time + 160;
+      this.onMove?.(this.heldDirection);
+    }
     const wasBusy = this.busy;
     if (this.animation) {
       const { objects, from, to, start, duration } = this.animation;
@@ -1039,6 +1128,7 @@ export class RoomScene extends ModelFactory {
     this.animatePlayer(time);
     if (wasBusy && !this.busy) this.onIdle?.();
     this.animateFeather(time);
+    this.updateFollowCamera();
     this.renderer.render(this.scene, this.camera);
   }
 }

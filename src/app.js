@@ -1,3 +1,4 @@
+import { sceneConfig } from './config.js';
 import { Game, cellKey, directions } from './game.js';
 import { levels, playMap } from './levels.js';
 import { RoomScene } from './scene.js';
@@ -50,6 +51,7 @@ function openIntro() {
   intro.showModal();
   updateControls();
   intro.scrollTop = 0;
+  intro.focus({ preventScroll: true });
 }
 element('intro-start').addEventListener('click', () => intro.close());
 element('intro-skip').addEventListener('click', () => intro.close());
@@ -154,7 +156,10 @@ function update() {
     : hasStone ? 'Сундук в тупике — отмените ход или начните заново' : 'Верните улики на свои места';
   const journey = currentJourney();
   const lastRoom = journey.index === journey.rooms.length - 1;
-  element('victory-text').textContent = lastRoom ? 'Все комнаты этой истории пройдены. Улики восстановлены.' : 'Все улики на своих местах.';
+  element('victory').classList.toggle('map-victory', lastRoom);
+  element('victory-scroll').toggleAttribute('hidden', !lastRoom);
+  element('victory-title').textContent = lastRoom ? 'Карта восстановлена!' : 'Комната восстановлена!';
+  element('victory-text').textContent = lastRoom ? `Поздравляем! Все комнаты карты «${selectedJourneyLocation()?.title ?? 'История'}» пройдены. Улики восстановлены.` : 'Все улики на своих местах.';
   element('next').textContent = lastRoom ? (locations.indexOf(selectedJourneyLocation()) < locations.length - 1 ? 'Следующая карта' : 'Вернуться к картам') : 'Следующая комната';
   if (game.complete && !completed.has(levels[currentLevel].id)) {
     completed.add(levels[currentLevel].id);
@@ -179,6 +184,7 @@ function loadLevel(index, session = null) {
   const journey = currentJourney();
   element('room-number').textContent = `${String(journey.index + 1).padStart(2, '0')} / ${String(journey.rooms.length).padStart(2, '0')}`;
   scene.load(game.map, game.state, { tutorial: index < 3 });
+  if (game.complete) scene.sync(game.state, true, { complete: true });
   update();
   if (!intro.open) stage.focus({ preventScroll: true });
 }
@@ -265,6 +271,17 @@ menu.addEventListener('close', () => {
 try {
   scene = new RoomScene(stage);
   updateControls();
+  window.gameDebug = {
+    get floorDarkening() { return sceneConfig.floorDarkening; },
+    set floorDarkening(value) { scene.setFloorDarkening(value); },
+    get initialVerticalAngle() { return sceneConfig.initialVerticalAngle; },
+    set initialVerticalAngle(value) {
+      if (!Number.isFinite(Number(value))) return;
+      sceneConfig.initialVerticalAngle = Math.max(15, Math.min(85, Number(value)));
+      scene.verticalAngle = sceneConfig.initialVerticalAngle;
+      scene.fitCamera();
+    },
+  };
   scene.onMove = move;
   scene.onVictory = update;
   scene.onIdle = () => {
@@ -289,7 +306,11 @@ try {
     } else {
       const nextLocation = locations[locations.indexOf(selectedJourneyLocation()) + 1];
       if (nextLocation && locationAvailable(nextLocation, completed)) {
-        loadLevel(levels.indexOf(locationLevels(nextLocation)[0]));
+        showLocation(nextLocation);
+        element('room-shelf').scrollLeft = 0;
+        menu.showModal();
+        updateControls();
+        element('menu-open').setAttribute('aria-expanded', 'true');
       } else {
         showAtlas();
         menu.showModal();

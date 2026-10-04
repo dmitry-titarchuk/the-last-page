@@ -2,7 +2,7 @@ import { setRandom } from './helpers/random.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { RoomScene, pairInteriorWalls } from '../src/scene.js';
+import { RoomScene, pairInteriorWalls, obstacleModels } from '../src/scene.js';
 import { Game, cellKey, perimeterSide } from '../src/game.js';
 import { sceneConfig } from '../src/config.js';
 import { levels, playMap } from '../src/levels.js';
@@ -532,6 +532,7 @@ test('Свайп даёт один ход, а два пальца меняют �
     send('pointerdown');
     send('pointermove', { clientX: 100 + dx, clientY: 200 + dy });
     assert.equal(scene.verticalAngle, 43);
+    assert.equal(moves.at(-1), direction, 'Ход начинается до отпускания пальца');
     send('pointerup', { clientX: 100 + dx, clientY: 200 + dy });
     assert.equal(moves.at(-1), direction);
   }
@@ -741,11 +742,9 @@ test('Все варианты преград помещаются в клетк�
       const bounds = new THREE.Box3().setFromObject(obstacle);
       assert.ok(bounds.min.x >= -.48 && bounds.max.x <= .48, `${variant}: границы X`);
       assert.ok(bounds.min.z >= -.48 && bounds.max.z <= .48, `${variant}: границы Z`);
-      assert.ok(Math.abs(Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x)) - .47) < .000001,
-        `${variant}: занимает почти всю ширину плитки`);
-      assert.ok(Math.abs(Math.max(Math.abs(bounds.min.z), Math.abs(bounds.max.z)) - .47) < .000001,
-        `${variant}: занимает почти всю глубину плитки`);
-      assert.ok(bounds.min.y >= -.000001 && bounds.max.y <= .8, `${variant}: высота`);
+      assert.ok(bounds.getSize(new THREE.Vector3()).x > .25, `${variant}: читаемый размер X`);
+      assert.ok(bounds.getSize(new THREE.Vector3()).z > .25, `${variant}: читаемый размер Z`);
+      assert.ok(bounds.min.y >= -.000001 && bounds.max.y <= .800001, `${variant}: высота`);
     }
   }
 });
@@ -763,21 +762,43 @@ test('Верхняя книга у книг стоя сохраняет обыч
       model.updateMatrixWorld(true);
       const top = model.children.at(-1);
       const cover = top.children[1];
-      const xEdge = new THREE.Vector3(.3, 0, 0).applyMatrix4(cover.matrixWorld)
-        .sub(new THREE.Vector3().applyMatrix4(cover.matrixWorld));
-      const zEdge = new THREE.Vector3(0, 0, .44).applyMatrix4(cover.matrixWorld)
-        .sub(new THREE.Vector3().applyMatrix4(cover.matrixWorld));
-      assert.ok(Math.abs(xEdge.length() / zEdge.length() - 2 / 3) < 1e-6);
+      const { width, depth } = cover.geometry.parameters;
+      const origin = new THREE.Vector3().applyMatrix4(cover.matrixWorld);
+      const xEdge = new THREE.Vector3(width, 0, 0).applyMatrix4(cover.matrixWorld).sub(origin);
+      const zEdge = new THREE.Vector3(0, 0, depth).applyMatrix4(cover.matrixWorld).sub(origin);
+      const yEdge = new THREE.Vector3(0, 1, 0).applyMatrix4(cover.matrixWorld).sub(origin);
+      assert.ok(Math.abs(xEdge.dot(zEdge)) < 1e-8, 'Обложка прямоугольная');
+      assert.ok(Math.abs(xEdge.dot(yEdge)) < 1e-8, 'Наклон не искажает толщину');
+      assert.ok(xEdge.length() / zEdge.length() > .6 && xEdge.length() / zEdge.length() < 1);
+      assert.ok(Math.abs(top.rotation.z) > .03, 'Книга следует наклону опор');
+      assert.ok(Math.abs(top.rotation.y) >= .045, 'Есть лёгкий поворот в горизонтальной плоскости');
       const topBounds = new THREE.Box3().setFromObject(top);
-      assert.ok(Math.abs(topBounds.getSize(new THREE.Vector3()).y - .08) < 1e-6, 'Толщина сохранена');
+      const standing = model.children.filter((part) => part.isGroup && part !== top);
       const standingBounds = new THREE.Box3();
-      for (const part of model.children.filter((part) => part.isGroup && part !== top)) {
-        standingBounds.union(new THREE.Box3().setFromObject(part));
+      for (const part of standing) standingBounds.union(new THREE.Box3().setFromObject(part));
+      assert.ok(topBounds.getSize(new THREE.Vector3()).x < standingBounds.getSize(new THREE.Vector3()).x * .8,
+        'Книга закрывает только часть ряда');
+      // Нижняя плоскость верхней книги касается двух опор и не проникает в них.
+      const inverse = top.matrixWorld.clone().invert();
+      let contacts = 0;
+      const thickness = top.children[0].geometry.parameters.height + .024;
+      for (const part of standing) {
+        let supports = false;
+        part.traverse((mesh) => {
+          if (!mesh.geometry) return;
+          const positions = mesh.geometry.attributes.position;
+          for (let index = 0; index < positions.count; index++) {
+            const point = new THREE.Vector3().fromBufferAttribute(positions, index)
+              .applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
+            if (Math.abs(point.x) > width / 2 + 1e-6 || Math.abs(point.z) > depth / 2 + 1e-6) continue;
+            assert.ok(point.y <= -thickness / 2 + 1e-6, 'Без пересечения с опорами');
+            if (Math.abs(point.y + thickness / 2) < 1e-6) supports = true;
+          }
+        });
+        if (supports) contacts++;
       }
-      assert.ok(topBounds.min.x > standingBounds.min.x && topBounds.max.x < standingBounds.max.x,
-        'Книги по краям ряда видимы');
-      assert.ok(topBounds.min.z <= standingBounds.min.z && topBounds.max.z >= standingBounds.max.z,
-        'Длинная сторона перекрывает глубину ряда');
+      assert.ok(contacts >= 2, 'Два верхних ребра поддерживают книгу');
+
     }
   }
 });
@@ -917,6 +938,14 @@ test('При почёсывании рука обходит шляпу, в то�
       scene.animatePlayer(time);
       maxTilt = Math.max(maxTilt, -scene.hatPivot.rotation.x);
       scene.scene.updateMatrixWorld(true);
+      const head = scene.headPivot.getObjectByName('player-head');
+      const headToHat = new THREE.Matrix4().copy(scene.hatPivot.matrixWorld).invert().multiply(head.matrixWorld);
+      const vertices = head.geometry.attributes.position;
+      for (let index = 0; index < vertices.count; index++) {
+        const point = new THREE.Vector3().fromBufferAttribute(vertices, index).applyMatrix4(headToHat);
+        assert.ok(point.y < .07 - .001, `Макушка внутри тульи: ${fps} FPS, ${time} мс`);
+        if (point.y > -.01) assert.ok(Math.hypot(point.x, point.z) < .19 - .001, 'Голова не проходит сквозь бок шляпы');
+      }
       for (const mesh of scene.arms[1].children) {
         mesh.geometry.computeBoundingBox();
         const transform = new THREE.Matrix4().copy(scene.hatPivot.matrixWorld).invert().multiply(mesh.matrixWorld);
@@ -932,6 +961,7 @@ test('При почёсывании рука обходит шляпу, в то�
     }
     assert.ok(maxTilt > .1, 'Шляпа наклоняется назад');
     assert.ok(Math.abs(scene.hatPivot.rotation.x) < .005, 'Шляпа плавно возвращается');
+    assert.ok(scene.hatPivot.position.distanceTo(scene.hatRestPosition) < .001, 'Подъём тоже плавно исчезает');
   }
 });
 
@@ -1255,4 +1285,112 @@ test('тап завершает победный танец один раз, о�
   assert.equal(scene.finishVictory(), false);
   scene.frame(start + 6000);
   assert.equal(calls, 1);
+});
+
+test('Щипок ограничивает масштаб, камера следует за ходом и останавливается на краю', () => {
+  const { scene, game } = setup();
+  scene.camera = new THREE.PerspectiveCamera(32, 16 / 9, .1, 100);
+  scene.verticalAngle = 53;
+  scene.player.position.set(0, scene.player.userData.groundOffset, 0);
+  scene.setZoom(9);
+  assert.equal(scene.zoom, 3);
+  const focus = scene.player.position.clone().add(new THREE.Vector3(0, .65, 0)).project(scene.camera);
+  assert.ok(Math.abs(focus.x) < 1e-6 && Math.abs(focus.y) < 1e-6, 'Герой в центре при наличии места');
+  const first = scene.camera.position.clone();
+  scene.player.position.x += .2;
+  scene.frame(100);
+  assert.ok(scene.camera.position.distanceTo(first) > .01, 'Камера движется вместе с героем');
+  scene.player.position.x = 100;
+  scene.updateFollowCamera();
+  const edge = scene.camera.position.clone();
+  scene.player.position.x = 200;
+  scene.updateFollowCamera();
+  assert.ok(scene.camera.position.distanceTo(edge) < 1e-6, 'За краем камера больше не движется');
+  scene.setZoom(.1);
+  assert.equal(scene.zoom, 1);
+  scene.setZoom(2);
+  scene.load(game.map, game.state);
+  assert.equal(scene.zoom, 1, 'Новый уровень возвращает общий вид');
+});
+
+test('Затемнение меняет только материалы пола и ограничивает отладочное значение', () => {
+  const { scene } = setup();
+  const original = sceneConfig.floorDarkening;
+  const chestColor = scene.boxes[0].userData.chest.materials[0].color.clone();
+  try {
+    scene.setFloorDarkening(0);
+    const light = scene.floorMaterials[0].color.clone();
+    scene.setFloorDarkening(.3);
+    assert.ok(scene.floorMaterials[0].color.r < light.r);
+    assert.ok(scene.boxes[0].userData.chest.materials[0].color.equals(chestColor));
+    assert.equal(scene.setFloorDarkening(5), .8);
+  } finally { scene.setFloorDarkening(original); }
+});
+
+test('Обложки всех книжных преград остаются прямоугольными после подгонки мебели', (t) => {
+  let random = 0;
+  setRandom(t, () => random);
+  const { scene } = setup();
+  for (const value of [0, .5, .999999]) {
+    random = value;
+    for (const variant of ['stack', 'upright', 'upright-no-frame', 'pyramid', 'coffee-table', 'cabinet']) {
+      for (let span = 1; span <= (obstacleModels.find((entry) => entry.id === variant).maxSpan ?? 1); span++) {
+        const model = scene.createObstacle(variant, span);
+        model.updateMatrixWorld(true);
+        model.traverse((mesh) => {
+          if (mesh.name !== 'book-cover') return;
+          const origin = new THREE.Vector3().applyMatrix4(mesh.matrixWorld);
+          const edges = ['x', 'y', 'z'].map((axis) => {
+            const edge = new THREE.Vector3(); edge[axis] = 1;
+            return edge.applyMatrix4(mesh.matrixWorld).sub(origin).normalize();
+          });
+          for (let i = 0; i < 3; i++) for (let j = i + 1; j < 3; j++) {
+            assert.ok(Math.abs(edges[i].dot(edges[j])) < 1e-7, `${variant}: прямые углы обложки`);
+          }
+        });
+      }
+    }
+  }
+});
+
+test('Удержание свайпа повторяет шаги, щипок останавливает ход и ограничивает масштаб', (t) => {
+  t.mock.method(performance, 'now', () => 100);
+  const { scene, game } = setup();
+  scene.reduceMotion = true;
+  const handlers = new Map();
+  scene.renderer.domElement = {
+    addEventListener: (name, handler) => handlers.set(name, handler),
+    classList: { add() {}, remove() {} },
+    setPointerCapture() {}, hasPointerCapture() { return false; },
+  };
+  scene.swipeDirection = () => 'right';
+  scene.fitCamera = () => {};
+  scene.verticalAngle = 53;
+  let moves = 0;
+  scene.onMove = () => { moves++; };
+  scene.setupMouseControls();
+  const send = (type, values = {}) => handlers.get(type)({ type, pointerType: 'touch', pointerId: 1, button: 0, clientX: 100, clientY: 200, ...values });
+  send('pointerdown');
+  send('pointermove', { clientX: 140 });
+  assert.equal(moves, 1);
+  scene.frame(259);
+  assert.equal(moves, 1);
+  scene.frame(260);
+  assert.equal(moves, 2, 'Продолжение без нового свайпа');
+  send('pointerdown', { pointerId: 2, clientX: 240 });
+  assert.equal(scene.heldDirection, null);
+  send('pointermove', { pointerId: 2, clientX: 340 });
+  assert.equal(scene.zoom, 2);
+  send('pointermove', { pointerId: 2, clientX: 640 });
+  assert.equal(scene.zoom, 3);
+  scene.frame(500);
+  assert.equal(moves, 2, 'Во время щипка герой стоит');
+  send('pointerup', { pointerId: 2, clientX: 640 });
+  send('pointerup', { clientX: 140 });
+  scene.frame(700);
+  assert.equal(moves, 2, 'Отпускание не добавляет ход');
+  send('pointerdown');
+  send('pointermove', { clientX: 140 });
+  scene.load(game.map, game.state);
+  assert.equal(scene.heldDirection, null, 'Загрузка отменяет удержание');
 });

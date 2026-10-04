@@ -246,13 +246,15 @@ export class ModelFactory {
     const head = new THREE.Mesh(new THREE.SphereGeometry(.15, 16, 12), skin);
     head.position.y = .08;
     head.castShadow = true;
+    head.name = 'player-head';
     this.headPivot.add(head);
     this.block(this.headPivot, [.045, .05, .055], [0, .065, .15], skin);
     for (const x of [-.055, .055]) {
       this.block(this.headPivot, [.022, .025, .02], [x, .105, .135], dark, false);
     }
     this.hatPivot = new THREE.Group();
-    this.hatPivot.position.y = .16;
+    this.hatPivot.position.y = .164;
+    this.hatRestPosition = this.hatPivot.position.clone();
     this.headPivot.add(this.hatPivot);
     const hat = new THREE.Mesh(new THREE.CylinderGeometry(.19, .19, .08, 20), dark);
     hat.position.y = .03;
@@ -281,10 +283,13 @@ export class ModelFactory {
     const gilding = this.material(0xc5a469);
     const colorOffset = Math.floor(Math.random() * palette.length);
     let bookIndex = 0;
-    let uprightTopBook;
+    const volumes = [];
+
     // Книга лежит плашмя: обложки, светлый блок страниц и отдельный корешок.
     const book = (parent, width, thickness, depth, position, yaw = 0, upright = false) => {
       const volume = new THREE.Group();
+      volumes.push(volume);
+      volume.userData.book = true;
       volume.position.set(...position);
       volume.rotation.set(0, yaw, upright ? Math.PI / 2 : 0);
       parent.add(volume);
@@ -293,7 +298,7 @@ export class ModelFactory {
       const cover = covers.get(color);
       this.block(volume, [width - .025, thickness - .024, depth - .035], [0, 0, .006], pages);
       for (const y of [-1, 1]) {
-        this.block(volume, [width, .012, depth], [0, y * (thickness - .012) / 2, 0], cover);
+        this.block(volume, [width, .012, depth], [0, y * (thickness - .012) / 2, 0], cover).name = 'book-cover';
       }
       this.block(volume, [width, thickness, .025], [0, 0, -depth / 2 + .0125], cover);
       for (const x of [-width * .32, width * .32]) {
@@ -331,23 +336,39 @@ export class ModelFactory {
           this.block(group, [.035, .28, .48], [x, .185, 0], wood);
         }
       }
-      let tallest = 0;
       const count = span === 1 ? 5 : 13;
+      const support = 1 + Math.floor(Math.random() * (count - 3));
+      const slope = (Math.random() < .5 ? -1 : 1) * (.04 + Math.random() * .08);
+      const yaw = [-.1, -.045, .045, .1][(colorOffset + support) % 4];
+      const supportHeight = (span === 1 ? .35 : .32) + Math.random() * .02;
+      const center = (support + .5 - (count - 1) / 2) * .117;
       for (let i = 0; i < count; i++) {
-        const height = span === 1 ? .43 + Math.random() * .13 : .34 + Math.random() * .1;
-        tallest = Math.max(tallest, height);
-        book(group, height, .105, .41, [(i - (count - 1) / 2) * .117, base + height / 2, 0], 0, true);
+        const x = (i - (count - 1) / 2) * .117;
+        const height = i === support || i === support + 1
+          ? supportHeight + slope * Math.cos(yaw) * (x - center)
+            - Math.abs(slope * Math.cos(yaw)) * .0525 - Math.abs(slope * Math.sin(yaw)) * .205
+          : (span === 1 ? .26 : .25) + Math.random() * .05;
+        book(group, height, .105, .41, [x, base + height / 2, 0],
+          i === support || i === support + 1 ? 0 : [-.025, -.012, 0, .012, .025][(i + colorOffset) % 5], true);
       }
-      uprightTopBook = book(group, .3, .08, .44, [0, base + .04 + tallest, 0]);
+      const top = book(group, .30 + Math.random() * .04, .065 + Math.random() * .02,
+        .45 + Math.random() * .04, [center, 0, (Math.random() - .5) * .01], yaw);
+      top.rotation.z = Math.atan(slope);
+      // Нижняя обложка касается верхних рёбер двух соседних книг.
+      const thickness = top.children[0].geometry.parameters.height + .024;
+      top.position.y = base + supportHeight - slope * Math.sin(yaw) * top.position.z
+        + thickness / (2 * Math.cos(top.rotation.z));
+      top.name = 'upright-top-book';
     } else if (variant === 'pyramid') {
       for (let row = 0; row < 3; row++) {
         const count = 3 - row;
         for (let i = 0; i < count; i++) {
           book(group, .245, .145, .49 - row * .035,
-            [(i - (count - 1) / 2) * .255, .0725 + row * .145, 0]);
+            [(i - (count - 1) / 2) * .255, .0725 + row * .145, 0],
+            [-.015, 0, .015][(i + row + colorOffset) % 3]);
         }
       }
-      book(group, .36, .085, .32, [0, .4775, 0], .12);
+      book(group, .29, .085, .4, [0, .4775, 0], .12);
     } else {
       const wood = this.material(Math.random() < .5 ? 0x79583e : 0x5f5140);
       if (variant === 'coffee-table') {
@@ -383,10 +404,23 @@ export class ModelFactory {
     const bounds = new THREE.Box3().setFromObject(group);
     group.scale.x = (span - .06) / 2 / Math.max(Math.abs(bounds.min.x), Math.abs(bounds.max.x));
     group.scale.z = .47 / Math.max(Math.abs(bounds.min.z), Math.abs(bounds.max.z));
-    if (uprightTopBook) {
-      // Узкая сторона обложки составляет 2/3 длинной даже после подгонки к клеткам.
-      // Меняем только ширину: глубина и толщина верхней книги сохраняются.
-      uprightTopBook.scale.x = (.44 * group.scale.z * 2 / 3) / (.3 * group.scale.x);
+    if (['stack', 'upright', 'upright-no-frame', 'pyramid'].includes(variant)) {
+      // Одинаковый масштаб по горизонтали сохраняет прямые углы повёрнутых обложек.
+      const scale = Math.min(group.scale.x, group.scale.z, .56 / bounds.max.y);
+      group.scale.setScalar(scale);
+    }
+    if (['coffee-table', 'cabinet'].includes(variant)) {
+      // Подгонка мебели к клеткам не должна скашивать книги на её поверхности.
+      for (const volume of volumes) {
+        const holder = new THREE.Group();
+        holder.position.copy(volume.position);
+        holder.scale.set(1 / group.scale.x, 1, 1 / group.scale.z);
+        group.add(holder);
+        holder.add(volume);
+        volume.position.set(0, 0, 0);
+        const scale = Math.min(group.scale.x, group.scale.z);
+        volume.scale.set(scale, 1, scale);
+      }
     }
     group.rotation.y = rotation;
     return group;
